@@ -14,7 +14,7 @@ setup(
     install_requires=[],
     entry_points={
         'console_scripts': [
-            'dspreview=dspreview.cli:main',
+            'dspreview=workers.cli:main',
         ]
     },
     classifiers = [],
