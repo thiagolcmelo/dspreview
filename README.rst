@@ -108,8 +108,9 @@ Preparing for Development
 -------------------------
 
 1. Ensure ``pip`` and ``pipenv`` are installed.
-2. Clone repository: ``https://github.com/thiagolcmelo/dspreview``
-3. Fetch development dependencies: ``make install``
+2. Make sure you also have ``default-libmysqlclient-dev`` or ``libmysqlclient-dev`` installed.
+3. Clone repository: ``https://github.com/thiagolcmelo/dspreview``
+4. Fetch development dependencies: ``make install``
 
 
 Running Tests

@@ -7,6 +7,10 @@ import os.path
 import argparse
 import re
 
+from src.utils.sql_helper import SqlHelper
+from src.utils.bucket_helper import BucketHelper
+from src.workers.worker import DcmWorker, DspWorker
+
 class ChangeWorker(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
         namespace.worker = 'dsp'
@@ -24,8 +28,8 @@ def create_parser():
             a worker to run its task.""",
         default="work", nargs='?', const=1)
     parser.add_argument("--worker", "-w", type=str,
-        help="The worker to execute")
-    parser.add_argument("--dsp", "-d", type=str,
+        help="The worker to execute", choices=['dcm','dsp'])
+    parser.add_argument("--dsp", "-d", type=str, default='',
         help="The specific DSP worker to execute", action=ChangeWorker)
     parser.add_argument("--generate-report", "-g",
         help="Generate report", required=False, default=False,
@@ -45,12 +49,24 @@ def manager(args):
     
     """
     if args.action == "init":
-        print("Initializing...")
+        sql = SqlHelper()
+        sql.initialize_database()
     elif args.action == "work":
         if args.generate_report:
             print("Generating...")
         else:
-            print("Working...")
+            workers = []
+            if args.worker == 'dcm':
+                workers.append(DcmWorker())
+            elif args.dsp:
+                workers.append(DspWorker(args.dsp))
+            else:
+                dsp_opts = BucketHelper.dsp_available()
+                for opt in dsp_opts:
+                    workers.append(DspWorker(opt))
+            for w in workers:
+                w.download().parse().upload()
+
     elif args.action == "serve":
         print("Serving...")
 

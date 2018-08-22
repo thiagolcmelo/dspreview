@@ -9,6 +9,7 @@ import json
 import os
 import tempfile
 import datetime
+import re
 
 import pandas as pd
 
@@ -43,6 +44,13 @@ class BucketHelper(object):
         os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = self.account
         self._service = None
     
+    def __enter__(self):
+        return self
+    
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """WARNING! it needs to be properly closed... """
+        self._service = None
+
     @property
     def service(self):
         """it avoids the creation of multiple service"""
@@ -86,7 +94,7 @@ class BucketHelper(object):
             done = False
             while done is False:
                 status, done = downloader.next_chunk()
-                print("Download {}%.".format(int(status.progress() * 100)))
+                print("[{}] Download {}%.".format(filename, int(status.progress() * 100)))
             tmpfile.seek(0)
             return pd.read_csv(tmpfile)
         return None
@@ -116,3 +124,26 @@ class BucketHelper(object):
         except:
             return False
         return True
+
+
+    @classmethod
+    def dsp_available(cls):
+        """this function tries to figure out which DSP files are available in
+        the bucket
+
+        Returns
+        -------
+        array of DSPs
+        """
+        with cls() as inst:
+            files_list = inst.list_files()
+            dsp_files = []
+            for f in files_list:
+                fname = f['name']
+                if len(fname.split('/')) > 1:
+                    continue
+                elif re.search('.*dcm.*', fname, re.IGNORECASE):
+                    continue
+                dsp_files.append(fname.split('.')[0])
+            return dsp_files
+            
