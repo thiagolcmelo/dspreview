@@ -19,9 +19,9 @@ You must specify the following environment variables prior to usage:
 Since this project has support only for GCP (currently), the following 
 environment variables are also mandatory:
 
+- ``GOOGLE_APPLICATION_CREDENTIALS`` the json file for an account with admin permissions for the `Storage`_ service.
 - ``GCP_BUCKET`` the bucket where the ``.csv`` file will be placed
 - ``GCP_BUCKET_ARCHIVE`` the bucket where the ``.csv`` file will be archive after processed.
-- ``GCP_SERVICE_ACCOUNT_JSON`` the json file for an account with admin permissions for the `Storage`_ service.
 
 If the above environment variables are set, you can initialize the system.
 It will create the database, tables, and so on. It might be donne through:
