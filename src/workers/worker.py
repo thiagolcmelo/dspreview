@@ -2,13 +2,16 @@
 """
 """
 
+# python standard
 import re
 
+# third-party imports
 import pandas as pd
 import numpy as np
 from pandas.io import sql
 import MySQLdb
 
+# local imports
 from src.utils.bucket_helper import BucketHelper
 from src.utils.sql_helper import SqlHelper
 

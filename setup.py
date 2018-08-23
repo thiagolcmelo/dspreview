@@ -19,6 +19,6 @@ setup(
     },
     classifiers = [],
     url = 'https://github.com/thiagolcmelo/dspreview',
-    download_url = 'https://github.com/thiagolcmelo/dspreview/archive/0.1.tar.gz',
-    version='0.1',
+    download_url = 'https://github.com/thiagolcmelo/dspreview/archive/0.1.0.tar.gz',
+    version='0.1.0',
 )

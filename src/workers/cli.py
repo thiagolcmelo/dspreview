@@ -2,14 +2,18 @@
 """
 """
 
+# python standard
 import sys
 import os.path
 import argparse
 import re
+sys.path.append("src/webapp")
 
+# local imports
 from src.utils.sql_helper import SqlHelper
 from src.utils.bucket_helper import BucketHelper
 from src.workers.worker import DcmWorker, DspWorker, generate_report
+from src.webapp.run import app
 
 class ChangeWorker(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
@@ -35,7 +39,7 @@ def create_parser():
         help="Generate report", required=False, default=False,
         action='store_true')
     parser.add_argument("--port", "-p", type=int,
-        help="The port for serve the web app", default=80, required=False)
+        help="The port for serve the web app", default=8080, required=False)
     return parser
 
 def manager(args):
@@ -68,7 +72,7 @@ def manager(args):
                 w.download().parse().upload()
 
     elif args.action == "serve":
-        print("Serving...")
+        app.run(port=args.port)
 
 def main():
     """

@@ -1,8 +1,13 @@
 # -*- coding: utf-8 -*-
 
+# python standard
+import sys
 import os
+import re
 import json
+import subprocess
 
+# third-party imports
 from sqlalchemy import Column, ForeignKey, Integer, String, Float, DateTime, Boolean
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, validates
@@ -13,6 +18,10 @@ from sqlalchemy.sql import func
 Base = declarative_base()
 
 class DCM(Base):
+    """
+    Create a DCM table
+    """
+
     __tablename__ = 'dcm_raw'
     id = Column(Integer, primary_key=True)
     date = Column(DateTime, nullable=False)
@@ -30,11 +39,16 @@ class DCM(Base):
     created_at = Column(DateTime, nullable=False, server_default=func.now())
     updated_at = Column(DateTime, nullable=False, server_default=func.now(), onupdate=func.now())
 
+# Create an index to not allow reapeated values on these dimensions
 Index('dcm_index', DCM.date, DCM.brand, DCM.sub_brand, DCM.campaign_id, DCM.campaign, \
     DCM.placement_id, DCM.placement, DCM.dsp, DCM.ad_type, unique=True)
 
 
 class DSP(Base):
+    """
+    Create a DSP table
+    """
+
     __tablename__ = 'dsp_raw'
     id = Column(Integer, primary_key=True)
     date = Column(DateTime, nullable=False)
@@ -50,10 +64,15 @@ class DSP(Base):
     created_at = Column(DateTime, nullable=False, server_default=func.now())
     updated_at = Column(DateTime, nullable=False, server_default=func.now(), onupdate=func.now())
 
+# Create an index to not allow reapeated values on these dimensions
 Index('dsp_index', DSP.date, DSP.brand, DSP.sub_brand, DSP.campaign_id, DSP.campaign, DSP.dsp, DSP.ad_type, unique=True)
 
 
 class Report(Base):
+    """
+    Create a Report table
+    """
+
     __tablename__ = 'report'
     id = Column(Integer, primary_key=True)
     date = Column(DateTime, nullable=False)
@@ -73,11 +92,17 @@ class Report(Base):
     created_at = Column(DateTime, nullable=False, server_default=func.now())
     updated_at = Column(DateTime, nullable=False, server_default=func.now(), onupdate=func.now())
 
+# Create an index to not allow reapeated values on these dimensions
 Index('report_index', Report.date, Report.brand, Report.sub_brand, Report.ad_campaign_id, \
     Report.ad_campaign, Report.dsp, Report.dsp_campaign_id, Report.dsp_campaign, unique=True)
 
 
 class SqlHelper(object):
+    """
+    This helper creates connections and initialize the database for the
+    operational data (DCM,DSP)
+    """
+
     def __init__(self):
         self.dbhost = os.getenv("DB_HOST")
         self.dbport = os.getenv("DB_PORT")
@@ -85,12 +110,14 @@ class SqlHelper(object):
         self.dbpass = os.getenv("DB_PASS")
         self.dbname = os.getenv("DB_NAME")
 
+        # check for the config file even if the env vars are found
         user_home = os.path.expanduser("~")
         config_file = "{}/.dspreview.json".format(user_home)
         if os.path.exists(config_file):
             with open(config_file, 'r') as f:
                 try:
                     data = json.loads(f.read())
+                    # prefer the environment variables
                     self.dbhost = self.dbhost or data.get("DB_HOST")
                     self.dbport = self.dbport or data.get("DB_PORT")
                     self.dbuser = self.dbuser or data.get("DB_USER")
@@ -99,6 +126,7 @@ class SqlHelper(object):
                 except:
                     raise Exception("Invalid .dspreview.json file.")
     
+        # all these values are necessary
         if not all([self.dbhost, self.dbport, self.dbuser, self.dbpass, self.dbname]):
             raise Exception("""It is not possible to connect in the MySQL database
                             All of the following environment variables must be set
@@ -109,13 +137,44 @@ class SqlHelper(object):
                             - DB_NAME
                             another possibility woul be the .dspreview.json ;)""")
         
-        self.con_str = 'mysql+mysqldb://%s:%s@%s:%s/%s' % (self.dbuser, \
-            self.dbpass, self.dbhost, self.dbport, self.dbname)
+        # connection string for operational use
+        self.con_str = "mysql+mysqldb://{dbuser}:{dbpass}@{dbhost}:{dbport}/{dbname}".format(\
+            dbuser=self.dbuser, dbpass=self.dbpass, dbhost=self.dbhost, \
+            dbport=self.dbport, dbname=self.dbname)
+        self.flask_str = "mysql://{dbuser}:{dbpass}@{dbhost}:{dbport}/{dbname}".format(\
+            dbuser=self.dbuser, dbpass=self.dbpass, dbhost=self.dbhost, \
+            dbport=self.dbport, dbname=self.dbname)
         
     def initialize_database(self):
+        """
+        Initialize the whole database
+        """
+        # 
+        #sys.path.append("src/webapp")
+        config_file = "src/webapp/instance/config.py"
+        config_lines = []
+        sql_config_line = "SQLALCHEMY_DATABASE_URI = '{constr}'\n".format(constr=self.flask_str)
+        with open(config_file, "r") as f:
+            config_lines = f.readlines()
+        has_uri_cfg = False
+        for i in range(len(config_lines)):
+            if re.search(".*SQLALCHEMY_DATABASE_URI.*", config_lines[i]):
+                config_lines[i] = sql_config_line
+                has_uri_cfg = True
+        if not has_uri_cfg:
+            config_lines.append(sql_config_line)
+        with open(config_file, "w") as f:
+            for l in config_lines:
+                f.write(l)
+        # First initialize things related to Flask
+        
+        # Then initialize things related to the operational
         engine = create_engine(self.con_str)
         Base.metadata.bind = engine
         Base.metadata.create_all(engine)
     
     def get_connection(self):
+        """
+        Create a connection to the MySQL database
+        """
         return create_engine(self.con_str, pool_recycle=1, pool_timeout=57600).connect()

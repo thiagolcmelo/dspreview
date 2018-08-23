@@ -1,22 +1,31 @@
 # -*- coding: utf-8 -*-
 """
+Test workers, how they should download stuff, how they should parse .csv
+files, and how they should store it in the database.
 """
 
+# python standard
 import os
 import unittest
 import unittest.mock as mock
 from unittest.mock import patch, mock_open
 
+# third-party imports
 import pandas as pd
 import numpy as np
 
+# local imports
 from src.utils.bucket_helper import BucketHelper
 from src.workers.worker import Worker, DcmWorker, DspWorker, generate_report
 
 
 class TestWorkers(unittest.TestCase):
     def setUp(self):
+        """
+        Some examples of information that could be found in the bucket
+        """
 
+        # a fake list of files
         self.fake_list = [
             {
                 'name': 'archive/',
@@ -37,6 +46,7 @@ class TestWorkers(unittest.TestCase):
             }
         ]
 
+        # first two lines of a good dcm's file
         self.good_dcm = pd.DataFrame([{
             "date": "2018-01-01",
             "campaign_id": "86394",
@@ -57,6 +67,7 @@ class TestWorkers(unittest.TestCase):
             "reach": "42.49"
         }])
 
+        # first two line of a file with data missing, will be filled with zero
         self.missing_fine_dcm = pd.DataFrame([{
             "date": "2018-01-01",
             "campaign_id": "86394",
@@ -77,6 +88,8 @@ class TestWorkers(unittest.TestCase):
             "reach": "42.49"
         }])
 
+        # first two line of a file with data missing, in this case, dimensions
+        # are missing
         self.missing_bad_dcm = pd.DataFrame([{
             "date": "2018-01-01",
             "campaign_id": "86394",
@@ -97,6 +110,7 @@ class TestWorkers(unittest.TestCase):
             "reach": "42.49"
         }])
 
+        # a file with a line repeated, it is expected to be deduplicated
         self.duplicate_dcm = pd.DataFrame([{
             "date": "2018-01-01",
             "campaign_id": "86394",
@@ -117,6 +131,7 @@ class TestWorkers(unittest.TestCase):
             "reach": "48.24"
         }])
 
+        # a file with same dimensions values and different metrics values
         self.bad_dcm = pd.DataFrame([{
             "date": "2018-01-01",
             "campaign_id": "86394",
@@ -137,6 +152,7 @@ class TestWorkers(unittest.TestCase):
             "reach": "87.54"
         }])
 
+        # first two lines of a good dsp's file
         self.good_dsp = pd.DataFrame([{
             "date": "2018-01-01",
             "campaign_id": "128115",
@@ -153,6 +169,7 @@ class TestWorkers(unittest.TestCase):
             "cost": "58547.0508",
         }])
 
+        # a file with a line repeated, it is expected to be deduplicated
         self.duplicate_dsp = pd.DataFrame([{
             "date": "2018-01-01",
             "campaign_id": "128115",
@@ -169,6 +186,7 @@ class TestWorkers(unittest.TestCase):
             "cost": "40334.2797",
         }])
 
+        # first two line of a file with data missing, will be filled with zero
         self.missing_fine_dsp = pd.DataFrame([{
             "date": "2018-01-01",
             "campaign_id": "128115",
@@ -185,6 +203,8 @@ class TestWorkers(unittest.TestCase):
             "cost": "",
         }])
 
+        # first two line of a file with data missing, in this case, dimensions
+        # are missing
         self.missing_bad_dsp = pd.DataFrame([{
             "date": "2018-01-01",
             "campaign_id": "128115",
@@ -201,6 +221,7 @@ class TestWorkers(unittest.TestCase):
             "cost": "58547.0508",
         }])
 
+        # a file with same dimensions values and different metrics values
         self.bad_dsp = pd.DataFrame([{
             "date": "2018-01-01",
             "campaign_id": "128115",

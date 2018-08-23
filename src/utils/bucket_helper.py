@@ -5,27 +5,29 @@ currently it works only for GCP Storage, but it can be
 expanded to work with AWS S3 as well
 """
 
+# python standard
 import json
 import os
 import tempfile
 import datetime
 import re
 
+# third-party imports
 import pandas as pd
-
 import googleapiclient.discovery
 
 class BucketHelper(object):
-    """ This is a very simple class for listing, downloading and archiving
-    csv files.
+    """ 
+    List, download, and archive .csv files in buckets
     """
+
     def __init__(self):
         self.bucket = os.environ.get("GCP_BUCKET")
         self.account = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
 
+        # check for the config file even if the env vars are found
         user_home = os.path.expanduser("~")
         config_file = "{}/.dspreview.json".format(user_home)
-        
         if os.path.exists(config_file):
             with open(config_file, 'r') as f:
                 try:
@@ -35,12 +37,14 @@ class BucketHelper(object):
                             data.get("GOOGLE_APPLICATION_CREDENTIALS")
                 except:
                     raise Exception("Invalid .dspreview.json file.")
-                
+        
+        # all these values are necessary
         if not self.bucket or not self.account:
             raise Exception("""The GCP_BUCKET or GOOGLE_APPLICATION_CREDENTIALS
             are not set and there is not a .dspreview.json file in the user's
             home folder, please provide one of them.""")
         
+        # mkae sure they are the same
         os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = self.account
         self._service = None
     
@@ -53,13 +57,14 @@ class BucketHelper(object):
 
     @property
     def service(self):
-        """it avoids the creation of multiple service"""
+        """it avoids the creation of multiple services"""
         if not self._service:
             self._service = googleapiclient.discovery.build('storage', 'v1')
         return self._service
 
     def list_files(self):
-        """lists all files inside the project's bucket
+        """
+        List all files inside the bucket
 
         Returns
         -------
@@ -77,7 +82,8 @@ class BucketHelper(object):
         return all_objects
 
     def get_csv_file(self, filename):
-        """downloads a file that exists!
+        """
+        Download a file that exists!
 
         Params
         ------
@@ -100,7 +106,8 @@ class BucketHelper(object):
         return None
 
     def archive_csv_file(self, filename):
-        """archive a file that exists!
+        """
+        Archive a file that exists!
 
         Params
         ------
@@ -128,12 +135,12 @@ class BucketHelper(object):
 
     @classmethod
     def dsp_available(cls):
-        """this function tries to figure out which DSP files are available in
-        the bucket
+        """
+        Guess which files belong to DSP in the bucket
 
         Returns
         -------
-        array of DSPs
+        array of DSPs' files names
         """
         with cls() as inst:
             files_list = inst.list_files()

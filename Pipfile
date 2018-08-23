@@ -12,6 +12,11 @@ pandas = "*"
 sqlalchemy = "*"
 "psycopg2" = "*"
 mysqlclient = "*"
+flask-sqlalchemy = "*"
+flask-login = "*"
+flask-migrate = "*"
+flask-wtf = "*"
+flask-bootstrap = "*"
 
 [dev-packages]
 
