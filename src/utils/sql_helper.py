@@ -66,6 +66,7 @@ class Report(Base):
     dsp_campaign = Column(String(75), nullable=False)
     ad_impressions = Column(Float, nullable=False)
     ad_clicks = Column(Integer, nullable=False)
+    ad_reach = Column(Float, nullable=False)
     dsp_impressions = Column(Float, nullable=False)
     dsp_clicks = Column(Integer, nullable=False)
     dsp_cost = Column(Float, nullable=False)    
@@ -118,5 +119,3 @@ class SqlHelper(object):
     
     def get_connection(self):
         return create_engine(self.con_str, pool_recycle=1, pool_timeout=57600).connect()
-
-

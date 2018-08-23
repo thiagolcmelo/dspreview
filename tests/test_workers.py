@@ -11,7 +11,7 @@ import pandas as pd
 import numpy as np
 
 from src.utils.bucket_helper import BucketHelper
-from src.workers.worker import Worker, DcmWorker, DspWorker
+from src.workers.worker import Worker, DcmWorker, DspWorker, generate_report
 
 
 class TestWorkers(unittest.TestCase):

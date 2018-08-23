@@ -9,7 +9,7 @@ import re
 
 from src.utils.sql_helper import SqlHelper
 from src.utils.bucket_helper import BucketHelper
-from src.workers.worker import DcmWorker, DspWorker
+from src.workers.worker import DcmWorker, DspWorker, generate_report
 
 class ChangeWorker(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
@@ -53,7 +53,7 @@ def manager(args):
         sql.initialize_database()
     elif args.action == "work":
         if args.generate_report:
-            print("Generating...")
+            generate_report()
         else:
             workers = []
             if args.worker == 'dcm':

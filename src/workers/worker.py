@@ -14,6 +14,11 @@ from src.utils.sql_helper import SqlHelper
 
 
 class Worker(object):
+    """This is the basic worker, it knows how to download and upload data
+    But it shouldn't be instantiated directly!
+    The parser must be implemented for specific purposes
+    """
+
     def __init__(self):
         self.bucket = BucketHelper()
         self.dfs = []
@@ -45,6 +50,15 @@ class Worker(object):
         return self
 
     def upload(self):
+        """this is a basic upload to the mysql database, since the schema
+        is defined in src.utils.sql_helper, the DataFrames are expect to be
+        in a very specific format, which must be assured by the parsers
+        implementation
+
+        Returns
+        -------
+        The object instace for use in chain calls
+        """
         sqlhelper = SqlHelper()
         con = sqlhelper.get_connection()
         table = "%s_raw" % ('dsp' if self.dsp else 'dcm')
@@ -71,6 +85,8 @@ class Worker(object):
             connection.execute("DROP TABLE {temp}".format(temp=table_temp))
         return self
 
+    def parse(self):
+        raise NotImplementedError("Implemented by children, for specific purposes.")
 
 class DcmWorker(Worker):
     def __init__(self):
@@ -232,3 +248,86 @@ class DspWorker(Worker):
             self.dfs[i] = df.drop_duplicates()
 
         return self
+
+def generate_report():
+    """ this function generates the full report, joining data from DCM and
+    the DSPs. Since the files might have arbitrary dates, the option is to
+    generate the whole report table again. It is not that bad though 
+    
+    In the following query, there is a group by because we created another
+    dimension (ad_type) which is not required in the final report.
+    The main constrain here is the REACH metric, since it is a calculated
+    metric, summing over it might diverge a little bit from the correct value
+    """
+
+    query = """
+    INSERT INTO
+        report (DATE, brand, sub_brand, ad_campaign_id, ad_campaign, 
+            dsp_campaign_id, dsp, dsp_campaign, ad_impressions, ad_clicks, 
+            ad_reach, dsp_impressions, dsp_clicks, dsp_cost) 
+        SELECT
+            DATE,
+            brand,
+            sub_brand,
+            ad_campaign_id,
+            ad_campaign,
+            dsp_campaign_id,
+            dsp,
+            dsp_campaign,
+            ad_impressions,
+            ad_clicks,
+            ad_reach,
+            dsp_impressions,
+            dsp_clicks,
+            dsp_cost 
+        FROM
+            (
+                SELECT
+                    dcm.DATE AS DATE,
+                    dcm.brand AS brand,
+                    dcm.sub_brand AS sub_brand,
+                    dcm.campaign_id AS ad_campaign_id,
+                    dcm.campaign AS ad_campaign,
+                    dcm.dsp AS dsp,
+                    dsp.campaign_id AS dsp_campaign_id,
+                    dsp.campaign AS dsp_campaign,
+                    SUM(dcm.impressions) AS ad_impressions,
+                    SUM(dcm.clicks) AS ad_clicks,
+                    SUM(dcm.reach) AS ad_reach,
+                    SUM(dsp.impressions) AS dsp_impressions,
+                    SUM(dsp.clicks) AS dsp_clicks,
+                    SUM(dsp.cost) AS dsp_cost 
+                FROM
+                    dcm_raw AS dcm 
+                    LEFT JOIN
+                        dsp_raw AS dsp 
+                        ON dcm.DATE = dsp.DATE 
+                        AND dcm.brand = dsp.brand 
+                        AND dcm.sub_brand = dsp.sub_brand 
+                        AND dcm.dsp = dsp.dsp 
+                        AND dcm.ad_type = dsp.ad_type 
+                GROUP BY
+                    dcm.DATE,
+                    dcm.brand,
+                    dcm.sub_brand,
+                    dcm.campaign_id,
+                    dcm.campaign,
+                    dcm.dsp,
+                    dsp.campaign_id,
+                    dsp.campaign 
+            )
+            AS big_join 
+            ON DUPLICATE KEY 
+            UPDATE
+                report.ad_impressions = big_join.ad_impressions,
+                report.ad_clicks = big_join.ad_clicks,
+                report.ad_reach = big_join.ad_reach,
+                report.dsp_impressions = big_join.dsp_impressions,
+                report.dsp_clicks = big_join.dsp_clicks,
+                report.dsp_cost = big_join.dsp_cost,
+                report.updated_at = CURRENT_TIMESTAMP()
+    """
+    sqlhelper = SqlHelper()
+    con = sqlhelper.get_connection()
+    connection = con.connect()
+    connection.execute(query)

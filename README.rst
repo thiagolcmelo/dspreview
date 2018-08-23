@@ -11,7 +11,8 @@ Usage
 
 You must specify the following environment variables prior to usage:
 
-- ``DB_HOST`` the url or ip for the database
+- ``DB_HOST`` the url or ip for the mysql server
+- ``DB_PORT`` the port for the mysql server
 - ``DB_NAME`` the name of the database
 - ``DB_USER`` a user with writing permission
 - ``DB_PASS`` the user's password
@@ -22,6 +23,20 @@ environment variables are also mandatory:
 - ``GOOGLE_APPLICATION_CREDENTIALS`` the json file for an account with admin permissions for the `Storage`_ service.
 - ``GCP_BUCKET`` the bucket where the ``.csv`` file will be placed
 - ``GCP_BUCKET_ARCHIVE`` the bucket where the ``.csv`` file will be archive after processed.
+
+A much better option would be to set all these variables in a file named ``.dspreview.csg`` in the users home folder:
+
+::
+
+    {
+        "GOOGLE_APPLICATION_CREDENTIALS": "/home/user/service_account.json",
+        "GCP_BUCKET": "...",
+        "DB_HOST": "...",
+        "DB_PORT": "3306",
+        "DB_NAME": "...",
+        "DB_USER": "...",
+        "DB_PASS": "..."
+    }
 
 If the above environment variables are set, you can initialize the system.
 It will create the database, tables, and so on. It might be donne through:

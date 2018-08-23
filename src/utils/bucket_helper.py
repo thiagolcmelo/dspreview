@@ -146,4 +146,3 @@ class BucketHelper(object):
                     continue
                 dsp_files.append(fname.split('.')[0])
             return dsp_files
-            
