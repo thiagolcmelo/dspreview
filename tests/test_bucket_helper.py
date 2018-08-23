@@ -9,8 +9,8 @@ import unittest.mock as mock
 from unittest.mock import patch, mock_open
 
 # local imports
-from src.utils.bucket_helper import BucketHelper
-from src.utils.config_helper import ConfigHelper
+from utils.bucket_helper import BucketHelper
+from utils.config_helper import ConfigHelper
 
 class TestBucketHelper(unittest.TestCase):
 
@@ -26,7 +26,7 @@ class TestBucketHelper(unittest.TestCase):
         "GCP_BUCKET": '',
         "GOOGLE_APPLICATION_CREDENTIALS": ''
     })
-    @mock.patch('src.utils.bucket_helper.os.path.exists')
+    @mock.patch('utils.bucket_helper.os.path.exists')
     def test_instance_with_valid_file(self, mock_path_exists):
         mock_path_exists.return_value = True
         read_data="""{
@@ -34,7 +34,7 @@ class TestBucketHelper(unittest.TestCase):
                     "GCP_BUCKET": "dspreview"
                     }"""
         mo = mock_open(read_data=read_data)
-        with patch('src.utils.bucket_helper.open', mo) as m:
+        with patch('utils.bucket_helper.open', mo) as m:
             bh = BucketHelper()
             self.assertIsInstance(bh, BucketHelper)
     

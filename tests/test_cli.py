@@ -9,10 +9,11 @@ import unittest.mock as mock
 from unittest.mock import patch, mock_open
 
 # local imports
-from src.workers import cli
+from workers import cli
 
 class TestCli(unittest.TestCase):
     def setUp(self):
+        os.environ["FLASK_CONFIG"] = "testing"
         self.parser = cli.create_parser()
 
     def test_init(self):

@@ -17,7 +17,11 @@ setup(
             'dspreview=workers.cli:main',
         ]
     },
-    classifiers = [],
+    classifiers=[
+        "Programming Language :: Python :: 3",
+        "License :: OSI Approved :: MIT License",
+        "Operating System :: OS Independent",
+    ],
     url = 'https://github.com/thiagolcmelo/dspreview',
     download_url = 'https://github.com/thiagolcmelo/dspreview/archive/0.1.0.tar.gz',
     version='0.1.0',

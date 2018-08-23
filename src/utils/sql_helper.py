@@ -6,6 +6,8 @@ import os
 import re
 import json
 import subprocess
+# sys.path.insert(0, "./src")
+# sys.path.insert(0, "./src/webapp")
 
 # third-party imports
 from sqlalchemy import Column, ForeignKey, Integer, String, Float, DateTime, Boolean
@@ -15,86 +17,91 @@ from sqlalchemy.orm.session import Session
 from sqlalchemy import create_engine, Index
 from sqlalchemy.sql import func
 
-Base = declarative_base()
+# local imports
+from utils.config_helper import ConfigHelper
+from webapp.app import db, create_app
+from webapp.app.models import User, DCM, DSP, Report
 
-class DCM(Base):
-    """
-    Create a DCM table
-    """
+# Base = declarative_base()
 
-    __tablename__ = 'dcm_raw'
-    id = Column(Integer, primary_key=True)
-    date = Column(DateTime, nullable=False)
-    campaign_id = Column(Integer, nullable=False)
-    campaign = Column(String(75), nullable=False)
-    placement_id = Column(Integer, nullable=False)
-    placement = Column(String(75), nullable=False)
-    impressions = Column(Float, nullable=False)
-    clicks = Column(Integer, nullable=False)
-    reach = Column(Float, nullable=False)
-    brand = Column(String(25), nullable=False)
-    sub_brand = Column(String(25), nullable=False)
-    dsp = Column(String(25), nullable=False)
-    ad_type = Column(String(25), nullable=False)
-    created_at = Column(DateTime, nullable=False, server_default=func.now())
-    updated_at = Column(DateTime, nullable=False, server_default=func.now(), onupdate=func.now())
+# class DCM(Base):
+#     """
+#     Create a DCM table
+#     """
 
-# Create an index to not allow reapeated values on these dimensions
-Index('dcm_index', DCM.date, DCM.brand, DCM.sub_brand, DCM.campaign_id, DCM.campaign, \
-    DCM.placement_id, DCM.placement, DCM.dsp, DCM.ad_type, unique=True)
+#     __tablename__ = 'dcm_raw'
+#     id = Column(Integer, primary_key=True)
+#     date = Column(DateTime, nullable=False)
+#     campaign_id = Column(Integer, nullable=False)
+#     campaign = Column(String(75), nullable=False)
+#     placement_id = Column(Integer, nullable=False)
+#     placement = Column(String(75), nullable=False)
+#     impressions = Column(Float, nullable=False)
+#     clicks = Column(Integer, nullable=False)
+#     reach = Column(Float, nullable=False)
+#     brand = Column(String(25), nullable=False)
+#     sub_brand = Column(String(25), nullable=False)
+#     dsp = Column(String(25), nullable=False)
+#     ad_type = Column(String(25), nullable=False)
+#     created_at = Column(DateTime, nullable=False, server_default=func.now())
+#     updated_at = Column(DateTime, nullable=False, server_default=func.now(), onupdate=func.now())
 
-
-class DSP(Base):
-    """
-    Create a DSP table
-    """
-
-    __tablename__ = 'dsp_raw'
-    id = Column(Integer, primary_key=True)
-    date = Column(DateTime, nullable=False)
-    campaign_id = Column(Integer, nullable=False)
-    campaign = Column(String(75), nullable=False)
-    impressions = Column(Float, nullable=False)
-    clicks = Column(Integer, nullable=False)
-    cost = Column(Float, nullable=False)
-    brand = Column(String(25), nullable=False)
-    sub_brand = Column(String(25), nullable=False)
-    dsp = Column(String(25), nullable=False)
-    ad_type = Column(String(25), nullable=False)
-    created_at = Column(DateTime, nullable=False, server_default=func.now())
-    updated_at = Column(DateTime, nullable=False, server_default=func.now(), onupdate=func.now())
-
-# Create an index to not allow reapeated values on these dimensions
-Index('dsp_index', DSP.date, DSP.brand, DSP.sub_brand, DSP.campaign_id, DSP.campaign, DSP.dsp, DSP.ad_type, unique=True)
+# # Create an index to not allow reapeated values on these dimensions
+# Index('dcm_index', DCM.date, DCM.brand, DCM.sub_brand, DCM.campaign_id, DCM.campaign, \
+#     DCM.placement_id, DCM.placement, DCM.dsp, DCM.ad_type, unique=True)
 
 
-class Report(Base):
-    """
-    Create a Report table
-    """
+# class DSP(Base):
+#     """
+#     Create a DSP table
+#     """
 
-    __tablename__ = 'report'
-    id = Column(Integer, primary_key=True)
-    date = Column(DateTime, nullable=False)
-    brand = Column(String(25), nullable=False)
-    sub_brand = Column(String(25), nullable=False)
-    ad_campaign_id = Column(Integer, nullable=False)
-    ad_campaign = Column(String(75), nullable=False)
-    dsp = Column(String(25), nullable=False)
-    dsp_campaign_id = Column(Integer, nullable=False)
-    dsp_campaign = Column(String(75), nullable=False)
-    ad_impressions = Column(Float, nullable=False)
-    ad_clicks = Column(Integer, nullable=False)
-    ad_reach = Column(Float, nullable=False)
-    dsp_impressions = Column(Float, nullable=False)
-    dsp_clicks = Column(Integer, nullable=False)
-    dsp_cost = Column(Float, nullable=False)    
-    created_at = Column(DateTime, nullable=False, server_default=func.now())
-    updated_at = Column(DateTime, nullable=False, server_default=func.now(), onupdate=func.now())
+#     __tablename__ = 'dsp_raw'
+#     id = Column(Integer, primary_key=True)
+#     date = Column(DateTime, nullable=False)
+#     campaign_id = Column(Integer, nullable=False)
+#     campaign = Column(String(75), nullable=False)
+#     impressions = Column(Float, nullable=False)
+#     clicks = Column(Integer, nullable=False)
+#     cost = Column(Float, nullable=False)
+#     brand = Column(String(25), nullable=False)
+#     sub_brand = Column(String(25), nullable=False)
+#     dsp = Column(String(25), nullable=False)
+#     ad_type = Column(String(25), nullable=False)
+#     created_at = Column(DateTime, nullable=False, server_default=func.now())
+#     updated_at = Column(DateTime, nullable=False, server_default=func.now(), onupdate=func.now())
 
-# Create an index to not allow reapeated values on these dimensions
-Index('report_index', Report.date, Report.brand, Report.sub_brand, Report.ad_campaign_id, \
-    Report.ad_campaign, Report.dsp, Report.dsp_campaign_id, Report.dsp_campaign, unique=True)
+# # Create an index to not allow reapeated values on these dimensions
+# Index('dsp_index', DSP.date, DSP.brand, DSP.sub_brand, DSP.campaign_id, DSP.campaign, DSP.dsp, DSP.ad_type, unique=True)
+
+
+# class Report(Base):
+#     """
+#     Create a Report table
+#     """
+
+#     __tablename__ = 'report'
+#     id = Column(Integer, primary_key=True)
+#     date = Column(DateTime, nullable=False)
+#     brand = Column(String(25), nullable=False)
+#     sub_brand = Column(String(25), nullable=False)
+#     ad_campaign_id = Column(Integer, nullable=False)
+#     ad_campaign = Column(String(75), nullable=False)
+#     dsp = Column(String(25), nullable=False)
+#     dsp_campaign_id = Column(Integer, nullable=False)
+#     dsp_campaign = Column(String(75), nullable=False)
+#     ad_impressions = Column(Float, nullable=False)
+#     ad_clicks = Column(Integer, nullable=False)
+#     ad_reach = Column(Float, nullable=False)
+#     dsp_impressions = Column(Float, nullable=False)
+#     dsp_clicks = Column(Integer, nullable=False)
+#     dsp_cost = Column(Float, nullable=False)    
+#     created_at = Column(DateTime, nullable=False, server_default=func.now())
+#     updated_at = Column(DateTime, nullable=False, server_default=func.now(), onupdate=func.now())
+
+# # Create an index to not allow reapeated values on these dimensions
+# Index('report_index', Report.date, Report.brand, Report.sub_brand, Report.ad_campaign_id, \
+#     Report.ad_campaign, Report.dsp, Report.dsp_campaign_id, Report.dsp_campaign, unique=True)
 
 
 class SqlHelper(object):
@@ -110,7 +117,9 @@ class SqlHelper(object):
         self.dbuser = os.getenv("DB_USER") or config.get_config("DB_USER")
         self.dbpass = os.getenv("DB_PASS") or config.get_config("DB_PASS")
         self.dbname = os.getenv("DB_NAME") or config.get_config("DB_NAME")
-        self.dbtest = os.getenv("DB_TEST") or config.get_config("DB_TEST")
+        self.dbtestname = os.getenv("DB_TEST_NAME") or config.get_config("DB_TEST_NAME")
+        self.dbtestuser = os.getenv("DB_TEST_USER") or config.get_config("DB_TEST_USER")
+        self.dbtestpass = os.getenv("DB_TEST_PASS") or config.get_config("DB_TEST_PASS")
 
         # all these values are necessary
         if not all([self.dbhost, self.dbport, self.dbuser, self.dbpass, self.dbname]):
@@ -121,7 +130,9 @@ class SqlHelper(object):
                             - DB_USER
                             - DB_PASS
                             - DB_NAME
-                            - DB_TEST (for development only)
+                            - DB_TEST_NAME (for development only)
+                            - DB_TEST_USER (for development only)
+                            - DB_TEST_PASS (for development only)
                             another possibility woul be the .dspreview.json ;)""")
         
         # connection string for operational use
@@ -132,37 +143,46 @@ class SqlHelper(object):
             dbuser=self.dbuser, dbpass=self.dbpass, dbhost=self.dbhost, \
             dbport=self.dbport, dbname=self.dbname)
         self.test_str = "mysql://{dbuser}:{dbpass}@{dbhost}:{dbport}/{dbname}".format(\
-            dbuser=self.dbuser, dbpass=self.dbpass, dbhost=self.dbhost, \
-            dbport=self.dbport, dbname=self.dbtest)
+            dbuser=self.dbtestuser, dbpass=self.dbtestpass, dbhost=self.dbhost, \
+            dbport=self.dbport, dbname=self.dbtestname)
         
     def initialize_database(self):
-        """
-        Initialize the whole database
-        """
-        # set the SQLALCHEMY_DATABASE_URI for flask
-        config_file = "src/webapp/instance/config.py"
-        config_lines = []
-        sql_config_line = "SQLALCHEMY_DATABASE_URI = '{constr}'\n".format(constr=self.flask_str)
-        with open(config_file, "r") as f:
-            config_lines = f.readlines()
-        has_uri_cfg = False
-        for i in range(len(config_lines)):
-            if re.search(".*SQLALCHEMY_DATABASE_URI.*", config_lines[i]):
-                config_lines[i] = sql_config_line
-                has_uri_cfg = True
-        if not has_uri_cfg:
-            config_lines.append(sql_config_line)
-        with open(config_file, "w") as f:
-            for l in config_lines:
-                f.write(l)
-        # First initialize things related to Flask
-        #sys.path.append("src/webapp")
+        # """
+        # Initialize the whole database
+        # """
+        # pass in test configurations
+        app = create_app('production')
+        app.config.update(
+            SQLALCHEMY_DATABASE_URI=self.flask_str
+        )
+        with app.app_context():
+            db.create_all()
+
+        # # set the SQLALCHEMY_DATABASE_URI for flask
+        # config_file = "src/webapp/instance/config.py"
+        # config_lines = []
+        # sql_config_line = "SQLALCHEMY_DATABASE_URI = '{constr}'\n".format(constr=self.flask_str)
+        # with open(config_file, "r") as f:
+        #     config_lines = f.readlines()
+        # has_uri_cfg = False
+        # for i in range(len(config_lines)):
+        #     if re.search(".*SQLALCHEMY_DATABASE_URI.*", config_lines[i]):
+        #         config_lines[i] = sql_config_line
+        #         has_uri_cfg = True
+        # if not has_uri_cfg:
+        #     config_lines.append(sql_config_line)
+        # with open(config_file, "w") as f:
+        #     for l in config_lines:
+        #         f.write(l)
+        # # First initialize things related to Flask
+        # #sys.path.append("src/webapp")
 
 
-        # Then initialize things related to the operational
-        engine = create_engine(self.con_str)
-        Base.metadata.bind = engine
-        Base.metadata.create_all(engine)
+        # # Then initialize things related to the operational
+        # engine = create_engine(self.con_str)
+        # Base.metadata.bind = engine
+        # Base.metadata.create_all(engine)
+
     
     def get_connection(self):
         """

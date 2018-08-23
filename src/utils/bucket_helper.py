@@ -17,7 +17,7 @@ import pandas as pd
 import googleapiclient.discovery
 
 # local imports
-from src.utils.config_helper import ConfigHelper
+from utils.config_helper import ConfigHelper
 
 class BucketHelper(object):
     """ 

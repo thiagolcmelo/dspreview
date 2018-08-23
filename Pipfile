@@ -17,6 +17,7 @@ flask-login = "*"
 flask-migrate = "*"
 flask-wtf = "*"
 flask-bootstrap = "*"
+flask-testing = "*"
 
 [dev-packages]
 

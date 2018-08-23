@@ -7,13 +7,14 @@ import sys
 import os.path
 import argparse
 import re
-sys.path.append("src/webapp")
+# sys.path.insert(0, "./src")
+# sys.path.insert(0, "./src/webapp")
 
 # local imports
-from src.utils.sql_helper import SqlHelper
-from src.utils.bucket_helper import BucketHelper
-from src.workers.worker import DcmWorker, DspWorker, generate_report
-from src.webapp.run import app
+from utils.sql_helper import SqlHelper
+from utils.bucket_helper import BucketHelper
+from workers.worker import DcmWorker, DspWorker, generate_report
+from webapp.run import app
 
 class ChangeWorker(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):

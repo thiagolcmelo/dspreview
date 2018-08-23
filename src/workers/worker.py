@@ -12,8 +12,8 @@ from pandas.io import sql
 import MySQLdb
 
 # local imports
-from src.utils.bucket_helper import BucketHelper
-from src.utils.sql_helper import SqlHelper
+from utils.bucket_helper import BucketHelper
+from utils.sql_helper import SqlHelper
 
 
 class Worker(object):
