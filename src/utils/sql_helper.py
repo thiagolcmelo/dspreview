@@ -104,28 +104,14 @@ class SqlHelper(object):
     """
 
     def __init__(self):
-        self.dbhost = os.getenv("DB_HOST")
-        self.dbport = os.getenv("DB_PORT")
-        self.dbuser = os.getenv("DB_USER")
-        self.dbpass = os.getenv("DB_PASS")
-        self.dbname = os.getenv("DB_NAME")
+        config = ConfigHelper()
+        self.dbhost = os.getenv("DB_HOST") or config.get_config("DB_HOST")
+        self.dbport = os.getenv("DB_PORT") or config.get_config("DB_PORT")
+        self.dbuser = os.getenv("DB_USER") or config.get_config("DB_USER")
+        self.dbpass = os.getenv("DB_PASS") or config.get_config("DB_PASS")
+        self.dbname = os.getenv("DB_NAME") or config.get_config("DB_NAME")
+        self.dbtest = os.getenv("DB_TEST") or config.get_config("DB_TEST")
 
-        # check for the config file even if the env vars are found
-        user_home = os.path.expanduser("~")
-        config_file = "{}/.dspreview.json".format(user_home)
-        if os.path.exists(config_file):
-            with open(config_file, 'r') as f:
-                try:
-                    data = json.loads(f.read())
-                    # prefer the environment variables
-                    self.dbhost = self.dbhost or data.get("DB_HOST")
-                    self.dbport = self.dbport or data.get("DB_PORT")
-                    self.dbuser = self.dbuser or data.get("DB_USER")
-                    self.dbpass = self.dbpass or data.get("DB_PASS")
-                    self.dbname = self.dbname or data.get("DB_NAME")
-                except:
-                    raise Exception("Invalid .dspreview.json file.")
-    
         # all these values are necessary
         if not all([self.dbhost, self.dbport, self.dbuser, self.dbpass, self.dbname]):
             raise Exception("""It is not possible to connect in the MySQL database
@@ -135,6 +121,7 @@ class SqlHelper(object):
                             - DB_USER
                             - DB_PASS
                             - DB_NAME
+                            - DB_TEST (for development only)
                             another possibility woul be the .dspreview.json ;)""")
         
         # connection string for operational use
@@ -144,13 +131,15 @@ class SqlHelper(object):
         self.flask_str = "mysql://{dbuser}:{dbpass}@{dbhost}:{dbport}/{dbname}".format(\
             dbuser=self.dbuser, dbpass=self.dbpass, dbhost=self.dbhost, \
             dbport=self.dbport, dbname=self.dbname)
+        self.test_str = "mysql://{dbuser}:{dbpass}@{dbhost}:{dbport}/{dbname}".format(\
+            dbuser=self.dbuser, dbpass=self.dbpass, dbhost=self.dbhost, \
+            dbport=self.dbport, dbname=self.dbtest)
         
     def initialize_database(self):
         """
         Initialize the whole database
         """
-        # 
-        #sys.path.append("src/webapp")
+        # set the SQLALCHEMY_DATABASE_URI for flask
         config_file = "src/webapp/instance/config.py"
         config_lines = []
         sql_config_line = "SQLALCHEMY_DATABASE_URI = '{constr}'\n".format(constr=self.flask_str)
@@ -167,7 +156,9 @@ class SqlHelper(object):
             for l in config_lines:
                 f.write(l)
         # First initialize things related to Flask
-        
+        #sys.path.append("src/webapp")
+
+
         # Then initialize things related to the operational
         engine = create_engine(self.con_str)
         Base.metadata.bind = engine

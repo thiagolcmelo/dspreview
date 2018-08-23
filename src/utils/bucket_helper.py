@@ -16,27 +16,18 @@ import re
 import pandas as pd
 import googleapiclient.discovery
 
+# local imports
+from src.utils.config_helper import ConfigHelper
+
 class BucketHelper(object):
     """ 
     List, download, and archive .csv files in buckets
     """
 
     def __init__(self):
-        self.bucket = os.environ.get("GCP_BUCKET")
-        self.account = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
-
-        # check for the config file even if the env vars are found
-        user_home = os.path.expanduser("~")
-        config_file = "{}/.dspreview.json".format(user_home)
-        if os.path.exists(config_file):
-            with open(config_file, 'r') as f:
-                try:
-                    data = json.loads(f.read())
-                    self.bucket = self.bucket or data.get("GCP_BUCKET")
-                    self.account = self.account or \
-                            data.get("GOOGLE_APPLICATION_CREDENTIALS")
-                except:
-                    raise Exception("Invalid .dspreview.json file.")
+        config = ConfigHelper()
+        self.bucket = os.environ.get("GCP_BUCKET") or config.get_config("GCP_BUCKET")
+        self.account = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS") or config.get_config("GOOGLE_APPLICATION_CREDENTIALS")
         
         # all these values are necessary
         if not self.bucket or not self.account:
@@ -44,7 +35,7 @@ class BucketHelper(object):
             are not set and there is not a .dspreview.json file in the user's
             home folder, please provide one of them.""")
         
-        # mkae sure they are the same
+        # make sure they are the same
         os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = self.account
         self._service = None
     
