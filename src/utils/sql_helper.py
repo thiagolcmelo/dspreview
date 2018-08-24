@@ -5,6 +5,7 @@ import sys
 import os
 import re
 import string
+import logging
 from random import choices
 
 # third-party imports
@@ -12,6 +13,10 @@ from sqlalchemy import create_engine
 
 # local imports
 from utils.config_helper import ConfigHelper
+
+############################################################################
+logger = logging.getLogger('dspreview_application')
+############################################################################
 
 
 def rand_word(N):
@@ -74,59 +79,62 @@ class SqlHelper(object):
                                       dbname=self.dbtestname)
 
     def initialize_database(self):
-        print("Creating configuration...")
-        instance_folder = sys.prefix + "/var/webapp.app-instance"
-        if not os.path.exists(instance_folder):
-            os.makedirs(instance_folder)
-        config_file = instance_folder + "/config.py"
-        config_lines = []
+        try:
+            logger.info("Creating configuration files")
+            instance_folder = sys.prefix + "/var/webapp.app-instance"
+            if not os.path.exists(instance_folder):
+                os.makedirs(instance_folder)
+            config_file = instance_folder + "/config.py"
+            config_lines = []
 
-        track_mod_line = "SQLALCHEMY_TRACK_MODIFICATIONS=False\n"
-        sql_config_line = "SQLALCHEMY_DATABASE_URI='{constr}'\n"
-        sql_config_line = sql_config_line.format(constr=self.flask_str)
-        secret_key_line = "SECRET_KEY='{secret}'\n"
-        secret_key_line = secret_key_line.format(secret=rand_word(20))
+            track_mod_line = "SQLALCHEMY_TRACK_MODIFICATIONS=False\n"
+            sql_config_line = "SQLALCHEMY_DATABASE_URI='{constr}'\n"
+            sql_config_line = sql_config_line.format(constr=self.flask_str)
+            secret_key_line = "SECRET_KEY='{secret}'\n"
+            secret_key_line = secret_key_line.format(secret=rand_word(20))
 
-        if os.path.exists(config_file):
-            with open(config_file, "r") as f:
-                config_lines = f.readlines()
+            if os.path.exists(config_file):
+                with open(config_file, "r") as f:
+                    config_lines = f.readlines()
 
-        has_uri_cfg = False
-        has_secret = False
-        has_track_mod = False
+            has_uri_cfg = False
+            has_secret = False
+            has_track_mod = False
 
-        for i in range(len(config_lines)):
-            if re.search(".*SQLALCHEMY_DATABASE_URI.*", config_lines[i]):
-                config_lines[i] = sql_config_line
-                has_uri_cfg = True
-            if re.search(".*SECRET_KEY.*", config_lines[i]):
-                has_secret = True
-            if re.search(".*SQLALCHEMY_TRACK_MODIFICATIONS.*",
-                         config_lines[i]):
-                has_track_mod = True
+            for i in range(len(config_lines)):
+                if re.search(".*SQLALCHEMY_DATABASE_URI.*", config_lines[i]):
+                    config_lines[i] = sql_config_line
+                    has_uri_cfg = True
+                if re.search(".*SECRET_KEY.*", config_lines[i]):
+                    has_secret = True
+                if re.search(".*SQLALCHEMY_TRACK_MODIFICATIONS.*",
+                             config_lines[i]):
+                    has_track_mod = True
 
-        if not has_uri_cfg:
-            config_lines.append(sql_config_line)
-        if not has_secret:
-            config_lines.append(secret_key_line)
-        if not has_track_mod:
-            config_lines.append(track_mod_line)
+            if not has_uri_cfg:
+                config_lines.append(sql_config_line)
+            if not has_secret:
+                config_lines.append(secret_key_line)
+            if not has_track_mod:
+                config_lines.append(track_mod_line)
 
-        with open(config_file, "w") as f:
-            for l in config_lines:
-                f.write(l)
-        # """
-        # Initialize the whole database
-        # """
-        # pass in test configurations
-        print("Configuring database...")
-        from webapp.app import db, create_app
-        app = create_app('production')
-        app.config.update(
-            SQLALCHEMY_DATABASE_URI=self.flask_str
-        )
-        with app.app_context():
-            db.create_all()
+            with open(config_file, "w") as f:
+                for l in config_lines:
+                    f.write(l)
+            # """
+            # Initialize the whole database
+            # """
+            # pass in test configurations
+            logger.info("Configuring database")
+            from webapp.app import db, create_app
+            app = create_app('production')
+            app.config.update(
+                SQLALCHEMY_DATABASE_URI=self.flask_str
+            )
+            with app.app_context():
+                db.create_all()
+        except Exception as err:
+            logger.exception(err)
 
         # set the SQLALCHEMY_DATABASE_URI for flask
 
@@ -136,7 +144,17 @@ class SqlHelper(object):
         # Base.metadata.create_all(engine)
 
     def get_context(self):
-        print("Creating context...")
+        """
+        This context is necessary for using the flask models outside the app
+        actually, it is also necessary inside the app, here we are creating
+        a wasy of using it outside
+
+        example:
+            > sqlhelper = SqlHelper()
+            > with sqlhelper.get_context():
+            >     cls = Classifications.query.all()
+        """
+        logger.info("Creating app context")
         from webapp.app import create_app
         app = create_app('production')
         app.config.update(
@@ -148,6 +166,6 @@ class SqlHelper(object):
         """
         Create a connection to the MySQL database
         """
-        print("Creating connection...")
+        logger.info("Creating sql connection")
         return create_engine(self.con_str, pool_recycle=1,
                              pool_timeout=57600).connect()

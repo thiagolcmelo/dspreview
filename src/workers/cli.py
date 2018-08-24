@@ -5,11 +5,28 @@
 # python standard
 import sys
 import argparse
+import logging
 
 # local imports
 from utils.sql_helper import SqlHelper
 from utils.bucket_helper import BucketHelper
 from workers.worker import DcmWorker, DspWorker, generate_report
+
+############################################################################
+str_format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+logging.basicConfig(level=logging.DEBUG,
+                    format=str_format,
+                    datefmt='%Y-%m-%d %H:%M',
+                    filename='/tmp/dspreview_application.log',
+                    filemode='w')
+
+console = logging.StreamHandler()
+console.setLevel(logging.INFO)
+formatter = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
+console.setFormatter(formatter)
+logging.getLogger('').addHandler(console)
+logger = logging.getLogger('dspreview_application')
+############################################################################
 
 
 class ChangeWorker(argparse.Action):
@@ -54,23 +71,23 @@ def manager(args):
 
     """
     if args.action == "init":
-        print("Initializing the environment...")
+        logger.info("Initializing the environment")
         sql = SqlHelper()
         sql.initialize_database()
     elif args.action == "work":
         if args.generate_report:
-            print("Generating report...")
+            logger.info("Generating report")
             generate_report()
         else:
             workers = []
             if args.worker == 'dcm':
-                print("Triggering DCM worker...")
+                logger.info("Triggering DCM worker")
                 workers.append(DcmWorker())
             elif args.dsp:
-                print("Triggering DSP worker [{}]...".format(args.dsp))
+                logger.info("Triggering DSP worker [{}]".format(args.dsp))
                 workers.append(DspWorker(args.dsp))
             else:
-                print("Triggering DSP workers...")
+                logger.info("Triggering DSP workers")
                 dsp_opts = BucketHelper.dsp_available()
                 for opt in dsp_opts:
                     workers.append(DspWorker(opt))
@@ -79,10 +96,16 @@ def manager(args):
 
     elif args.action == "serve":
         # keep these together for sanity reasons
-        from webapp.run import app
-        app.run(port=args.port)
+        try:
+            logger.info("Server requested")
+            from webapp.run import app
+            app.run(port=args.port)
+        except (KeyboardInterrupt, SystemExit):
+            logger.info("Server shutdown")
+        except Exception as err:
+            logger.exception(err)
 
-    print("Finish.")
+    logger.info("Finish")
 
 
 def main():

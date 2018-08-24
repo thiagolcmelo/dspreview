@@ -4,6 +4,7 @@
 
 # python standard
 import re
+import logging
 
 # third-party imports
 import pandas as pd
@@ -14,6 +15,10 @@ from utils.bucket_helper import BucketHelper
 from utils.sql_helper import SqlHelper
 from webapp.app.models import Classification
 from webapp.app.queries import GENERATE_REPORT
+
+############################################################################
+logger = logging.getLogger('dspreview_application')
+############################################################################
 
 
 class Worker(object):
@@ -48,7 +53,7 @@ class Worker(object):
         -------
         The object instace for use in chain calls
         """
-        print("Downloading...")
+        logger.info("Downloading")
         pattern = pattern or self.pattern
         self.dfs = []
         self.dfs_classified = []
@@ -76,12 +81,12 @@ class Worker(object):
         con = self.sqlhelper.get_connection()
 
         if raw:
-            print("Uploading [raw]...")
+            logger.info("Uploading [raw]")
             dims = self.dimensions_raw
             table_type = 'raw'
             dfs = self.dfs
         else:
-            print("Uploading [classified]...")
+            logger.info("Uploading [classified]")
             dims = self.dimensions
             table_type = 'classified'
             dfs = self.dfs_classified
@@ -149,7 +154,7 @@ class Worker(object):
         -------
         The object instace for use in chain calls
         """
-        print("Applying classification...")
+        logger.info("Applying classification")
         self.dfs_classified = []
         for i, df in enumerate(self.dfs):
             df = df.assign(brand=df.apply(self.find_brand, axis=1)) \
@@ -217,7 +222,7 @@ class DcmWorker(Worker):
         -------
         The object instace for use in chain calls
         """
-        print("Parsing...")
+        logger.info("Parsing")
         for i, df in enumerate(self.dfs):
             df.date = pd.to_datetime(df.date)
             df.campaign_id = df.campaign_id.replace(
@@ -287,7 +292,7 @@ class DspWorker(Worker):
         -------
         The object instace for use in chain calls
         """
-        print("Parsing...")
+        logger.info("Parsing")
         for i, df in enumerate(self.dfs):
             df.date = pd.to_datetime(df.date)
             df.campaign_id = df.campaign_id.replace(

@@ -10,6 +10,7 @@ import os
 import tempfile
 import datetime
 import re
+import logging
 
 # third-party imports
 import pandas as pd
@@ -17,6 +18,10 @@ import googleapiclient.discovery
 
 # local imports
 from utils.config_helper import ConfigHelper
+
+############################################################################
+logger = logging.getLogger('dspreview_application')
+############################################################################
 
 
 class BucketHelper(object):
@@ -94,8 +99,8 @@ class BucketHelper(object):
             done = False
             while done is False:
                 status, done = downloader.next_chunk()
-                print("[{}] Download {}%.".format(filename,
-                      int(status.progress() * 100)))
+                logger.info("[{}] Download {}%.".format(filename,
+                            int(status.progress() * 100)))
             tmpfile.seek(0)
             return pd.read_csv(tmpfile)
         return None
@@ -127,7 +132,7 @@ class BucketHelper(object):
                 self.service.objects().delete(bucket=self.bucket,
                                               object=filename).execute()
         except Exception as err:
-            print(str(err))
+            logger.info(str(err))
             return False
         return True
 
