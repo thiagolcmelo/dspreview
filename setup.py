@@ -1,5 +1,8 @@
 from setuptools import setup, find_packages
 
+with open('requirements.txt') as fp:
+    install_requires = fp.read().split('\n')
+
 with open('README.rst', 'r') as f:
     readme = f.read()
 
@@ -11,7 +14,7 @@ setup(
     author_email='thiago.lc.melo@gmail.com',
     packages=find_packages('src'),
     package_dir={'': 'src'},
-    install_requires=[],
+    install_requires=install_requires,
     entry_points={
         'console_scripts': [
             'dspreview=workers.cli:main',

@@ -74,9 +74,9 @@ class SqlHelper(object):
 
     def initialize_database(self):
         # create some configuration
-        if not os.path.exists("src/instance"):
-            os.makedirs("src/instance")
-        config_file = "src/instance/config.py"
+        # if not os.path.exists("src/instance"):
+        #     os.makedirs("src/instance")
+        config_file = os.getcwd() + "/instance/config.py"
         config_lines = []
 
         track_mod_line = "SQLALCHEMY_TRACK_MODIFICATIONS=False\n"
