@@ -1,2 +1,4 @@
 include README.rst
 recursive-include tests *.py
+recursive-include src/webapp/app/templates *
+recursive-include src/webapp/app/static *

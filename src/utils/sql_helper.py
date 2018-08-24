@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 # python standard
+import sys
 import os
 import re
 import string
@@ -74,9 +75,10 @@ class SqlHelper(object):
 
     def initialize_database(self):
         # create some configuration
-        # if not os.path.exists("src/instance"):
-        #     os.makedirs("src/instance")
-        config_file = os.getcwd() + "/instance/config.py"
+        instance_folder = sys.prefix + "/var/webapp.app-instance"
+        if not os.path.exists(instance_folder):
+            os.makedirs(instance_folder)
+        config_file = instance_folder + "/config.py"
         config_lines = []
 
         track_mod_line = "SQLALCHEMY_TRACK_MODIFICATIONS=False\n"

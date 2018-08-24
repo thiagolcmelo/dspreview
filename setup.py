@@ -15,6 +15,8 @@ setup(
     packages=find_packages('src'),
     package_dir={'': 'src'},
     install_requires=install_requires,
+    include_package_data=True,
+    zip_safe=False,
     entry_points={
         'console_scripts': [
             'dspreview=workers.cli:main',
@@ -26,6 +28,6 @@ setup(
         "Operating System :: OS Independent",
     ],
     url='https://github.com/thiagolcmelo/dspreview',
-    download_url='https://github.com/thiagolcmelo/dspreview/archive/0.1.0.tar.gz',
-    version='0.1.0',
+    download_url='https://github.com/thiagolcmelo/dspreview/archive/0.1.2.tar.gz',
+    version='0.1.2',
 )
