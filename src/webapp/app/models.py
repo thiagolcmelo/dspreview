@@ -10,10 +10,10 @@ from webapp.app import db, login_manager
 
 class DCM(db.Model):
     """
-    Create a DCM table
+    Create a DCM classified table
     """
 
-    __tablename__ = 'dcm_raw'
+    __tablename__ = 'dcm_classified'
     id = db.Column(db.Integer, primary_key=True)
     date = db.Column(db.DateTime, nullable=False)
     campaign_id = db.Column(db.Integer, nullable=False)
@@ -26,7 +26,6 @@ class DCM(db.Model):
     brand = db.Column(db.String(25), nullable=False)
     sub_brand = db.Column(db.String(25), nullable=False)
     dsp = db.Column(db.String(25), nullable=False)
-    ad_type = db.Column(db.String(25), nullable=False)
     created_at = db.Column(db.DateTime, nullable=False,
                            server_default=func.now())
     updated_at = db.Column(db.DateTime, nullable=False,
@@ -34,17 +33,43 @@ class DCM(db.Model):
 
 
 # Create an index to not allow reapeated values on these dimensions
-Index('dcm_index', DCM.date, DCM.brand, DCM.sub_brand, DCM.campaign_id,
-      DCM.campaign, DCM.placement_id, DCM.placement, DCM.dsp, DCM.ad_type,
+Index('dcm_classified_index', DCM.date, DCM.brand, DCM.sub_brand,
+      DCM.campaign_id, DCM.campaign, DCM.placement_id, DCM.placement, DCM.dsp,
       unique=True)
+
+
+class DCMRaw(db.Model):
+    """
+    Create a DCM raw table
+    """
+
+    __tablename__ = 'dcm_raw'
+    id = db.Column(db.Integer, primary_key=True)
+    date = db.Column(db.DateTime, nullable=False)
+    campaign_id = db.Column(db.Integer, nullable=False)
+    campaign = db.Column(db.String(75), nullable=False)
+    placement_id = db.Column(db.Integer, nullable=False)
+    placement = db.Column(db.String(75), nullable=False)
+    impressions = db.Column(db.Float, nullable=False)
+    clicks = db.Column(db.Integer, nullable=False)
+    reach = db.Column(db.Float, nullable=False)
+    created_at = db.Column(db.DateTime, nullable=False,
+                           server_default=func.now())
+    updated_at = db.Column(db.DateTime, nullable=False,
+                           server_default=func.now(), onupdate=func.now())
+
+
+# Create an index to not allow reapeated values on these dimensions
+Index('dcm_raw_index', DCMRaw.date, DCMRaw.campaign_id, DCMRaw.campaign,
+      DCMRaw.placement_id, DCMRaw.placement, unique=True)
 
 
 class DSP(db.Model):
     """
-    Create a DSP table
+    Create a DSP classified table
     """
 
-    __tablename__ = 'dsp_raw'
+    __tablename__ = 'dsp_classified'
     id = db.Column(db.Integer, primary_key=True)
     date = db.Column(db.DateTime, nullable=False)
     campaign_id = db.Column(db.Integer, nullable=False)
@@ -55,7 +80,6 @@ class DSP(db.Model):
     brand = db.Column(db.String(25), nullable=False)
     sub_brand = db.Column(db.String(25), nullable=False)
     dsp = db.Column(db.String(25), nullable=False)
-    ad_type = db.Column(db.String(25), nullable=False)
     created_at = db.Column(db.DateTime, nullable=False,
                            server_default=func.now())
     updated_at = db.Column(db.DateTime, nullable=False,
@@ -63,8 +87,32 @@ class DSP(db.Model):
 
 
 # Create an index to not allow reapeated values on these dimensions
-Index('dsp_index', DSP.date, DSP.brand, DSP.sub_brand, DSP.campaign_id,
-      DSP.campaign, DSP.dsp, DSP.ad_type, unique=True)
+Index('dsp_classified_index', DSP.date, DSP.brand, DSP.sub_brand,
+      DSP.campaign_id, DSP.campaign, DSP.dsp, unique=True)
+
+
+class DSPRaw(db.Model):
+    """
+    Create a DSP raw table
+    """
+
+    __tablename__ = 'dsp_raw'
+    id = db.Column(db.Integer, primary_key=True)
+    date = db.Column(db.DateTime, nullable=False)
+    campaign_id = db.Column(db.Integer, nullable=False)
+    campaign = db.Column(db.String(75), nullable=False)
+    impressions = db.Column(db.Float, nullable=False)
+    clicks = db.Column(db.Integer, nullable=False)
+    cost = db.Column(db.Float, nullable=False)
+    created_at = db.Column(db.DateTime, nullable=False,
+                           server_default=func.now())
+    updated_at = db.Column(db.DateTime, nullable=False,
+                           server_default=func.now(), onupdate=func.now())
+
+
+# Create an index to not allow reapeated values on these dimensions
+Index('dsp_raw_index', DSPRaw.date, DSPRaw.campaign_id, DSPRaw.campaign,
+      unique=True)
 
 
 class Report(db.Model):

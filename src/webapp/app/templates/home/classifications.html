@@ -2,6 +2,7 @@
 {% extends "base.html" %}
 {% block title %}Classifications{% endblock %}
 {% block body %}
+<div class='notifications bottom-right'></div>
 <div class="content-section">
   <div class="outer">
     <div class="middle">
@@ -62,13 +63,53 @@
             <h3> No classifications have been added. </h3>
             <hr class="intro-divider">
         {% endif %}
+        
+          <div class="container">
+              <div class="alert alert-success" style="display: none;" id="success-alert">
+                <strong>Success!</strong> New classifications applied.
+              </div>
+              <div class="alert alert-danger" style="display: none;" id="danger-alert">
+                <strong>Error!</strong> Something went wront.
+              </div>
+          </div>
           <a href="{{ url_for('home.add_classification') }}" class="btn btn-default btn-lg">
             <i class="fa fa-plus"></i>
             Add Classification
+          </a>
+          
+          <a href="#" class="btn btn-default btn-lg" id="refresh_classification">
+            <i class="fa fa-refresh" id="refresh_icon"></i>
+            Refresh Classification
           </a>
         </div>
       </div>
     </div>
   </div>
 </div>
+
+<script type=text/javascript>
+
+$(function() {
+    $('#refresh_classification').bind('click', function () {
+        $('#refresh_icon').addClass('fa-spin');
+        $('#success-alert').hide();
+        $('#danger-alert').hide();
+        $.ajax({
+          url: '/classification/reset',
+          success: function (data) {
+              $('#refresh_icon').removeClass('fa-spin');
+              if (data.status == "success") {
+                  $('#success-alert').show();
+              } else {
+                  $('#danger-alert').show();
+              }
+          },
+          fail: function(data) {
+              $('#refresh_icon').removeClass('fa-spin');
+              $('#danger-alert').show();
+          }
+        });
+    });
+});
+</script>
 {% endblock %}

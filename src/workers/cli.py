@@ -54,28 +54,35 @@ def manager(args):
 
     """
     if args.action == "init":
+        print("Initializing the environment...")
         sql = SqlHelper()
         sql.initialize_database()
     elif args.action == "work":
         if args.generate_report:
+            print("Generating report...")
             generate_report()
         else:
             workers = []
             if args.worker == 'dcm':
+                print("Triggering DCM worker...")
                 workers.append(DcmWorker())
             elif args.dsp:
+                print("Triggering DSP worker [{}]...".format(args.dsp))
                 workers.append(DspWorker(args.dsp))
             else:
+                print("Triggering DSP workers...")
                 dsp_opts = BucketHelper.dsp_available()
                 for opt in dsp_opts:
                     workers.append(DspWorker(opt))
             for w in workers:
-                w.download().parse().upload()
+                w.download().parse().classify().upload(raw=True).upload()
 
     elif args.action == "serve":
         # keep these together for sanity reasons
         from webapp.run import app
         app.run(port=args.port)
+
+    print("Finish.")
 
 
 def main():

@@ -65,8 +65,7 @@
 $(function() {
     var table = $('#report_table').DataTable();
     $("#report_table").hide();
-
-    $('#get_report').bind('click', function() {
+    var refresh_table = function () {
         var start_date = $('#start_date').val();
         var end_date = $('#end_date').val();
         $("#report_table").show();
@@ -91,7 +90,9 @@ $(function() {
                 { data: 'dsp_cost' },
             ]
         } );
-    });
+    };
+    refresh_table();
+    $('#get_report').bind('click', frefresh_table);
 });
 </script>
 

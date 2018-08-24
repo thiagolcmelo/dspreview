@@ -9,7 +9,8 @@ from flask_login import login_required
 from . import home
 from .forms import ClassificationForm
 from .. import db
-from ..models import Report, Classification
+from ..models import Report, Classification, DCM, DSP
+from ..queries import GENERATE_CLASSIFIED, GENERATE_REPORT
 
 
 @home.route('/')
@@ -64,10 +65,13 @@ def report_date():
         return jsonify({
             "status": "success",
             "data": [r.serialize for r in results]
-            })
+        })
     except Exception as err:
         print(str(err))
-        return jsonify(result={"status": "fail"})
+        return jsonify({
+            "status": "fail",
+            "data": []
+        })
 
 
 @home.route('/classifications', methods=['GET', 'POST'])
@@ -144,7 +148,6 @@ def edit_classification(id):
         # redirect to the classifications page
         return redirect(url_for('home.list_classifications'))
 
-
     form.brand.data = classification.brand
     form.sub_brand.data = classification.sub_brand
     form.dsp.data = classification.dsp
@@ -174,3 +177,26 @@ def delete_classification(id):
     return redirect(url_for('home.list_classifications'))
 
     return render_template(title="Delete Classification")
+
+
+@home.route('/classification/reset', methods=['GET'])
+@login_required
+def reset_classifications():
+    """
+    Reset all classifications, might take a while
+    """
+    try:
+        DCM.query.delete()
+        DSP.query.delete()
+        Report.query.delete()
+        db.session.execute(GENERATE_CLASSIFIED)
+        db.session.execute(GENERATE_REPORT)
+        db.session.commit()
+        return jsonify({
+            "status": "success"
+        })
+    except Exception as err:
+        print(str(err))
+        return jsonify({
+            "status": "fail"
+        })

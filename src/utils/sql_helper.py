@@ -74,7 +74,7 @@ class SqlHelper(object):
                                       dbname=self.dbtestname)
 
     def initialize_database(self):
-        # create some configuration
+        print("Creating configuration...")
         instance_folder = sys.prefix + "/var/webapp.app-instance"
         if not os.path.exists(instance_folder):
             os.makedirs(instance_folder)
@@ -119,6 +119,7 @@ class SqlHelper(object):
         # Initialize the whole database
         # """
         # pass in test configurations
+        print("Configuring database...")
         from webapp.app import db, create_app
         app = create_app('production')
         app.config.update(
@@ -134,9 +135,19 @@ class SqlHelper(object):
         # Base.metadata.bind = engine
         # Base.metadata.create_all(engine)
 
+    def get_context(self):
+        print("Creating context...")
+        from webapp.app import create_app
+        app = create_app('production')
+        app.config.update(
+            SQLALCHEMY_DATABASE_URI=self.flask_str
+        )
+        return app.app_context()
+
     def get_connection(self):
         """
         Create a connection to the MySQL database
         """
+        print("Creating connection...")
         return create_engine(self.con_str, pool_recycle=1,
                              pool_timeout=57600).connect()
