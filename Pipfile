@@ -18,6 +18,7 @@ flask-migrate = "*"
 flask-wtf = "*"
 flask-bootstrap = "*"
 flask-testing = "*"
+twine = "*"
 
 [dev-packages]
 
