@@ -119,12 +119,14 @@ class SqlHelper(object):
         # Initialize the whole database
         # """
         # pass in test configurations
-        # app = create_app('production')
-        # app.config.update(
-        #     SQLALCHEMY_DATABASE_URI=self.flask_str
-        # )
-        # with app.app_context():
-        #     db.create_all()
+        from webapp.app import db, create_app
+        app = create_app('production')
+        app.config.update(
+            SQLALCHEMY_DATABASE_URI=self.flask_str
+        )
+        with app.app_context():
+            db.create_all()
+
         # set the SQLALCHEMY_DATABASE_URI for flask
 
         # # Then initialize things related to the operational

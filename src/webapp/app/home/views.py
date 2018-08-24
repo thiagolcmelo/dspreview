@@ -2,12 +2,14 @@
 from datetime import datetime
 
 # third-party imports
-from flask import jsonify, render_template, request
+from flask import flash, redirect, render_template, url_for, jsonify, request
 from flask_login import login_required
 
 # local imports
 from . import home
-from ..models import Report
+from .forms import ClassificationForm
+from .. import db
+from ..models import Report, Classification
 
 
 @home.route('/')
@@ -66,3 +68,109 @@ def report_date():
     except Exception as err:
         print(str(err))
         return jsonify(result={"status": "fail"})
+
+
+@home.route('/classifications', methods=['GET', 'POST'])
+@login_required
+def list_classifications():
+    """
+    List all classifications
+    """
+    classifications = Classification.query.all()
+
+    return render_template('home/classifications.html',
+                           classifications=classifications,
+                           title="Classifications")
+
+
+@home.route('/classifications/add', methods=['GET', 'POST'])
+@login_required
+def add_classification():
+    """
+    Add a classification to the database
+    """
+    add_classification = True
+
+    form = ClassificationForm()
+    if form.validate_on_submit():
+        classification = Classification(pattern=form.pattern.data,
+                                        brand=form.brand.data,
+                                        sub_brand=form.sub_brand.data,
+                                        dsp=form.dsp.data,
+                                        use_campaign_id=form.use_campaign_id.data,
+                                        use_campaign=form.use_campaign.data,
+                                        use_placement_id=form.use_placement_id.data,
+                                        use_placement=form.use_placement.data)
+        try:
+            # add classification to the database
+            db.session.add(classification)
+            db.session.commit()
+            flash('You have successfully added a new classification.')
+        except Exception:
+            # in case classification name already exists
+            flash('Error: classification name already exists.')
+
+        # redirect to classifications page
+        return redirect(url_for('home.list_classifications'))
+
+    # load classification template
+    return render_template('home/classification.html', action="Add",
+                           add_classification=add_classification, form=form,
+                           title="Add Classification")
+
+
+@home.route('/classifications/edit/<int:id>', methods=['GET', 'POST'])
+@login_required
+def edit_classification(id):
+    """
+    Edit a classification
+    """
+
+    add_classification = False
+
+    classification = Classification.query.get_or_404(id)
+    form = ClassificationForm(obj=classification)
+    if form.validate_on_submit():
+        classification.brand = form.brand.data
+        classification.sub_brand = form.sub_brand.data
+        classification.dsp = form.dsp.data
+        classification.use_campaign_id = form.use_campaign_id.data
+        classification.use_campaign = form.use_campaign.data
+        classification.use_placement_id = form.use_placement_id.data
+        classification.use_placement = form.use_placement.data
+        db.session.commit()
+        flash('You have successfully edited the classification.')
+
+        # redirect to the classifications page
+        return redirect(url_for('home.list_classifications'))
+
+
+    form.brand.data = classification.brand
+    form.sub_brand.data = classification.sub_brand
+    form.dsp.data = classification.dsp
+    form.use_campaign_id.data = classification.use_campaign_id
+    form.use_campaign.data = classification.use_campaign
+    form.use_placement_id.data = classification.use_placement_id
+    form.use_placement.data = classification.use_placement
+
+    return render_template('home/classification.html', action="Edit",
+                           add_classification=add_classification, form=form,
+                           classification=classification,
+                           title="Edit Classification")
+
+
+@home.route('/classification/delete/<int:id>', methods=['GET', 'POST'])
+@login_required
+def delete_classification(id):
+    """
+    Delete a classification from the database
+    """
+    classification = Classification.query.get_or_404(id)
+    db.session.delete(classification)
+    db.session.commit()
+    flash('You have successfully deleted the classification.')
+
+    # redirect to the classifications page
+    return redirect(url_for('home.list_classifications'))
+
+    return render_template(title="Delete Classification")

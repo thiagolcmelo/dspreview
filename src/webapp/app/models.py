@@ -122,6 +122,35 @@ Index('report_index', Report.date, Report.brand, Report.sub_brand,
       Report.dsp_campaign_id, Report.dsp_campaign, unique=True)
 
 
+class Classification(db.Model):
+    """
+    Create a classification model
+    """
+
+    __tablename__ = 'classifications'
+    id = db.Column(db.Integer, primary_key=True)
+    pattern = db.Column(db.String(256), index=True)
+    brand = db.Column(db.String(25), nullable=True)
+    sub_brand = db.Column(db.String(25), nullable=True)
+    dsp = db.Column(db.String(25), nullable=True)
+    use_campaign_id = db.Column(db.Boolean, nullable=False, default=False)
+    use_campaign = db.Column(db.Boolean, nullable=False, default=False)
+    use_placement_id = db.Column(db.Boolean, nullable=False, default=False)
+    use_placement = db.Column(db.Boolean, nullable=False, default=False)
+    created_at = db.Column(db.DateTime, nullable=False,
+                           server_default=func.now())
+    updated_at = db.Column(db.DateTime, nullable=False,
+                           server_default=func.now(), onupdate=func.now())
+
+
+# Create an index to not allow reapeated values on these dimensions
+Index('classification_index', Classification.pattern, Classification.brand,
+      Classification.sub_brand, Classification.dsp,
+      Classification.use_campaign, Classification.use_campaign_id,
+      Classification.use_placement, Classification.use_placement_id,
+      unique=True)
+
+
 class User(UserMixin, db.Model):
     """
     Create an User table
