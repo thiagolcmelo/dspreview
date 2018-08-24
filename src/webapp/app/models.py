@@ -7,6 +7,7 @@ from sqlalchemy import Index
 # local imports
 from webapp.app import db, login_manager
 
+
 class DCM(db.Model):
     """
     Create a DCM table
@@ -26,12 +27,16 @@ class DCM(db.Model):
     sub_brand = db.Column(db.String(25), nullable=False)
     dsp = db.Column(db.String(25), nullable=False)
     ad_type = db.Column(db.String(25), nullable=False)
-    created_at = db.Column(db.DateTime, nullable=False, server_default=func.now())
-    updated_at = db.Column(db.DateTime, nullable=False, server_default=func.now(), onupdate=func.now())
+    created_at = db.Column(db.DateTime, nullable=False,
+                           server_default=func.now())
+    updated_at = db.Column(db.DateTime, nullable=False,
+                           server_default=func.now(), onupdate=func.now())
+
 
 # Create an index to not allow reapeated values on these dimensions
-Index('dcm_index', DCM.date, DCM.brand, DCM.sub_brand, DCM.campaign_id, DCM.campaign, \
-    DCM.placement_id, DCM.placement, DCM.dsp, DCM.ad_type, unique=True)
+Index('dcm_index', DCM.date, DCM.brand, DCM.sub_brand, DCM.campaign_id,
+      DCM.campaign, DCM.placement_id, DCM.placement, DCM.dsp, DCM.ad_type,
+      unique=True)
 
 
 class DSP(db.Model):
@@ -51,11 +56,15 @@ class DSP(db.Model):
     sub_brand = db.Column(db.String(25), nullable=False)
     dsp = db.Column(db.String(25), nullable=False)
     ad_type = db.Column(db.String(25), nullable=False)
-    created_at = db.Column(db.DateTime, nullable=False, server_default=func.now())
-    updated_at = db.Column(db.DateTime, nullable=False, server_default=func.now(), onupdate=func.now())
+    created_at = db.Column(db.DateTime, nullable=False,
+                           server_default=func.now())
+    updated_at = db.Column(db.DateTime, nullable=False,
+                           server_default=func.now(), onupdate=func.now())
+
 
 # Create an index to not allow reapeated values on these dimensions
-Index('dsp_index', DSP.date, DSP.brand, DSP.sub_brand, DSP.campaign_id, DSP.campaign, DSP.dsp, DSP.ad_type, unique=True)
+Index('dsp_index', DSP.date, DSP.brand, DSP.sub_brand, DSP.campaign_id,
+      DSP.campaign, DSP.dsp, DSP.ad_type, unique=True)
 
 
 class Report(db.Model):
@@ -78,9 +87,11 @@ class Report(db.Model):
     ad_reach = db.Column(db.Float, nullable=False)
     dsp_impressions = db.Column(db.Float, nullable=False)
     dsp_clicks = db.Column(db.Integer, nullable=False)
-    dsp_cost = db.Column(db.Float, nullable=False)    
-    created_at = db.Column(db.DateTime, nullable=False, server_default=func.now())
-    updated_at = db.Column(db.DateTime, nullable=False, server_default=func.now(), onupdate=func.now())
+    dsp_cost = db.Column(db.Float, nullable=False)
+    created_at = db.Column(db.DateTime, nullable=False,
+                           server_default=func.now())
+    updated_at = db.Column(db.DateTime, nullable=False,
+                           server_default=func.now(), onupdate=func.now())
 
     @property
     def serialize(self):
@@ -102,11 +113,13 @@ class Report(db.Model):
             "dsp_cost": self.dsp_cost,
             "created_at": self.created_at.isoformat(),
             "updated_at": self.updated_at.isoformat()
-       }
+            }
+
 
 # Create an index to not allow reapeated values on these dimensions
-Index('report_index', Report.date, Report.brand, Report.sub_brand, Report.ad_campaign_id, \
-    Report.ad_campaign, Report.dsp, Report.dsp_campaign_id, Report.dsp_campaign, unique=True)
+Index('report_index', Report.date, Report.brand, Report.sub_brand,
+      Report.ad_campaign_id, Report.ad_campaign, Report.dsp,
+      Report.dsp_campaign_id, Report.dsp_campaign, unique=True)
 
 
 class User(UserMixin, db.Model):
@@ -148,6 +161,7 @@ class User(UserMixin, db.Model):
 
     def __repr__(self):
         return '<User: {}>'.format(self.username)
+
 
 # Set up user_loader
 @login_manager.user_loader

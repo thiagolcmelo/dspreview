@@ -6,6 +6,7 @@ from wtforms.validators import DataRequired, Email, EqualTo
 # local imports
 from ..models import User
 
+
 class RegistrationForm(FlaskForm):
     """
     Form for users to create new account
@@ -28,6 +29,7 @@ class RegistrationForm(FlaskForm):
     def validate_username(self, field):
         if User.query.filter_by(username=field.data).first():
             raise ValidationError('Username is already in use.')
+
 
 class LoginForm(FlaskForm):
     """

@@ -7,9 +7,6 @@ import re
 
 # third-party imports
 import pandas as pd
-import numpy as np
-from pandas.io import sql
-import MySQLdb
 
 # local imports
 from utils.bucket_helper import BucketHelper
@@ -29,8 +26,8 @@ class Worker(object):
         self.dsp = None
 
     def download(self, pattern=None):
-        """this function checks whether there are files in the GCP bucket 
-        with the given `pattern`. If there are, those files will be 
+        """this function checks whether there are files in the GCP bucket
+        with the given `pattern`. If there are, those files will be
         downloaded
 
         Params
@@ -83,27 +80,30 @@ class Worker(object):
                                     FROM {temp} ON DUPLICATE KEY
                                     UPDATE
                                     {updates}
-                                    """.format(table=table, temp=table_temp, \
-                                    updates=update_part, all_cols=all_columns))
+                                    """.format(table=table, temp=table_temp,
+                                               updates=update_part,
+                                               all_cols=all_columns))
             connection.execute("DROP TABLE {temp}".format(temp=table_temp))
         return self
 
     def parse(self):
-        raise NotImplementedError("Implemented by children, for specific purposes.")
+        raise NotImplementedError("""Implemented by children, for specific
+                                  purposes.""")
+
 
 class DcmWorker(Worker):
     def __init__(self):
         super(DcmWorker, self).__init__()
         self.pattern = '.*dcm.*'
         self.dimensions = [
-            'date', 
-            'brand', 
-            'sub_brand', 
+            'date',
+            'brand',
+            'sub_brand',
             'campaign_id',
             'campaign',
             'placement_id',
             'placement',
-            'dsp', 
+            'dsp',
             'ad_type'
         ]
         self.metrics = [
@@ -128,8 +128,8 @@ class DcmWorker(Worker):
         """this function should apply all the proper parsing operations in the
         downloaded dataframes, setting values as dates, integers, or floats
 
-        it is also responsible for figuring out the name of the brand, sub_brand,
-        the dsp and the ad_type names
+        it is also responsible for figuring out the name of the brand,
+        sub_brand, the dsp and the ad_type names
 
         Returns
         -------
@@ -156,7 +156,7 @@ class DcmWorker(Worker):
             prob_df = df.groupby(self.dimensions).agg({
                 "impressions": "sum",
                 "clicks": "sum",
-                "reach": "sum", # WARNING! CALCULATED METRIC!!!
+                "reach": "sum",  # WARNING! CALCULATED METRIC!!!
             }).reset_index()
 
             if prob_df.shape[0] != df.shape[0]:
@@ -184,12 +184,12 @@ class DspWorker(Worker):
         self.dsp = dsp
         self.pattern = '.*%s.*' % dsp
         self.dimensions = [
-            'date', 
-            'brand', 
-            'sub_brand', 
-            'dsp', 
-            'campaign', 
-            'campaign_id', 
+            'date',
+            'brand',
+            'sub_brand',
+            'dsp',
+            'campaign',
+            'campaign_id',
             'ad_type'
         ]
         self.metrics = [
@@ -211,8 +211,8 @@ class DspWorker(Worker):
         """this function should apply all the proper parsing operations in the
         downloaded dataframes, setting values as dates, integers, or floats
 
-        it is also responsible for figuring out the name of the brand, sub_brand,
-        the dsp and the ad_type names
+        it is also responsible for figuring out the name of the brand,
+        sub_brand, the dsp and the ad_type names
 
         Returns
         -------
@@ -252,11 +252,12 @@ class DspWorker(Worker):
 
         return self
 
+
 def generate_report():
     """ this function generates the full report, joining data from DCM and
     the DSPs. Since the files might have arbitrary dates, the option is to
-    generate the whole report table again. It is not that bad though 
-    
+    generate the whole report table again. It is not that bad though
+
     In the following query, there is a group by because we created another
     dimension (ad_type) which is not required in the final report.
     The main constrain here is the REACH metric, since it is a calculated
@@ -265,9 +266,9 @@ def generate_report():
 
     query = """
     INSERT INTO
-        report (DATE, brand, sub_brand, ad_campaign_id, ad_campaign, 
-            dsp_campaign_id, dsp, dsp_campaign, ad_impressions, ad_clicks, 
-            ad_reach, dsp_impressions, dsp_clicks, dsp_cost) 
+        report (DATE, brand, sub_brand, ad_campaign_id, ad_campaign,
+            dsp_campaign_id, dsp, dsp_campaign, ad_impressions, ad_clicks,
+            ad_reach, dsp_impressions, dsp_clicks, dsp_cost)
         SELECT
             DATE,
             brand,
@@ -282,7 +283,7 @@ def generate_report():
             ad_reach,
             dsp_impressions,
             dsp_clicks,
-            dsp_cost 
+            dsp_cost
         FROM
             (
                 SELECT
@@ -299,16 +300,16 @@ def generate_report():
                     SUM(dcm.reach) AS ad_reach,
                     SUM(dsp.impressions) AS dsp_impressions,
                     SUM(dsp.clicks) AS dsp_clicks,
-                    SUM(dsp.cost) AS dsp_cost 
+                    SUM(dsp.cost) AS dsp_cost
                 FROM
-                    dcm_raw AS dcm 
+                    dcm_raw AS dcm
                     LEFT JOIN
-                        dsp_raw AS dsp 
-                        ON dcm.DATE = dsp.DATE 
-                        AND dcm.brand = dsp.brand 
-                        AND dcm.sub_brand = dsp.sub_brand 
-                        AND dcm.dsp = dsp.dsp 
-                        AND dcm.ad_type = dsp.ad_type 
+                        dsp_raw AS dsp
+                        ON dcm.DATE = dsp.DATE
+                        AND dcm.brand = dsp.brand
+                        AND dcm.sub_brand = dsp.sub_brand
+                        AND dcm.dsp = dsp.dsp
+                        AND dcm.ad_type = dsp.ad_type
                 GROUP BY
                     dcm.DATE,
                     dcm.brand,
@@ -317,10 +318,10 @@ def generate_report():
                     dcm.campaign,
                     dcm.dsp,
                     dsp.campaign_id,
-                    dsp.campaign 
+                    dsp.campaign
             )
-            AS big_join 
-            ON DUPLICATE KEY 
+            AS big_join
+            ON DUPLICATE KEY
             UPDATE
                 report.ad_impressions = big_join.ad_impressions,
                 report.ad_clicks = big_join.ad_clicks,

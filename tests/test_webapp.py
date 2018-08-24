@@ -4,8 +4,6 @@
 
 # python standard
 import sys
-import os
-import unittest
 sys.path.insert(0, "./src")
 sys.path.insert(0, "./src/webapp")
 
@@ -19,23 +17,23 @@ from utils.sql_helper import SqlHelper
 from webapp.app import create_app, db
 from webapp.app.models import User
 
+
 class TestBase(TestCase):
 
     def create_app(self):
         sqlhelper = SqlHelper()
-        
+
         # pass in test configurations
         config_name = 'testing'
         app = create_app(config_name)
         app.config.update(
             SQLALCHEMY_DATABASE_URI=sqlhelper.test_str
         )
-        
+
         return app
 
     def setUp(self):
         # it needs to be here
-        
         """
         Will be called before every test
         """

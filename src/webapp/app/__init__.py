@@ -1,3 +1,5 @@
+# python standard
+
 # third-party imports
 from flask import abort, Flask, render_template
 from flask_bootstrap import Bootstrap
@@ -11,11 +13,12 @@ from webapp.config import app_config
 db = SQLAlchemy()
 login_manager = LoginManager()
 
+
 def create_app(config_name):
     app = Flask(__name__, instance_relative_config=True)
     app.config.from_object(app_config[config_name])
     app.config.from_pyfile('config.py')
-    
+
     Bootstrap(app)
     db.init_app(app)
     login_manager.init_app(app)
@@ -45,7 +48,7 @@ def create_app(config_name):
     @app.errorhandler(500)
     def internal_server_error(error):
         return render_template('errors/500.html', title='Server Error'), 500
-    
+
     @app.route('/500')
     def error():
         abort(500)

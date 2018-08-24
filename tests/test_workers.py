@@ -5,10 +5,8 @@ files, and how they should store it in the database.
 """
 
 # python standard
-import os
 import unittest
-import unittest.mock as mock
-from unittest.mock import patch, mock_open
+from unittest.mock import patch
 
 # third-party imports
 import pandas as pd
@@ -16,7 +14,7 @@ import numpy as np
 
 # local imports
 from utils.bucket_helper import BucketHelper
-from workers.worker import Worker, DcmWorker, DspWorker, generate_report
+from workers.worker import Worker, DcmWorker, DspWorker
 
 
 class TestWorkers(unittest.TestCase):
@@ -29,7 +27,7 @@ class TestWorkers(unittest.TestCase):
         self.fake_list = [
             {
                 'name': 'archive/',
-                'contentType': 'application/x-www-form-urlencoded;charset=UTF-8',
+                'contentType': 'application/x-www-form-urlencoded',
                 'size': '0'
             }, {
                 'name': 'dbm.csv',
@@ -347,12 +345,12 @@ class TestWorkers(unittest.TestCase):
         try:
             worker.parse()
             working = False
-        except:
+        except Exception:
             pass
 
         if not working:
-            self.assertFalse(True, """It should raise an exception since we 
-                are feeding the worker with a bad dataframe. This dataframe 
+            self.assertFalse(True, """It should raise an exception since we
+                are feeding the worker with a bad dataframe. This dataframe
                 has rows with missing placement or campaign""")
 
     @patch.object(BucketHelper, 'list_files')
@@ -363,8 +361,8 @@ class TestWorkers(unittest.TestCase):
         worker = DcmWorker()
         worker.download()
         worker.parse()
-        self.assertTrue(worker.dfs[0].shape[0] == 1, """The duplicate rows should
-            be removed!""")
+        self.assertTrue(worker.dfs[0].shape[0] == 1,
+                        "The duplicate rows should be removed!")
 
     @patch.object(BucketHelper, 'list_files')
     @patch.object(BucketHelper, 'get_csv_file')
@@ -379,16 +377,16 @@ class TestWorkers(unittest.TestCase):
         try:
             worker.parse()
             working = False
-        except:
+        except Exception:
             pass
 
         if not working:
-            self.assertFalse(True, """It should raise an exception since we 
-                are feeding the worker with a bad dataframe. This dataframe 
-                has rows with the same dimensions' combination and
-                some difference in the metrics values, this combination should be
+            self.assertFalse(True, """It should raise an exception since we
+                are feeding the worker with a bad dataframe. This dataframe
+                has rows with the same dimensions' combination and some
+                difference in the metrics values, this combination should be
                 unique""")
-    
+
     @patch.object(BucketHelper, 'list_files')
     @patch.object(BucketHelper, 'get_csv_file')
     def test_parse_dsp_good(self, mock_get_file, mock_list_files):
@@ -472,24 +470,24 @@ class TestWorkers(unittest.TestCase):
         try:
             worker.parse()
             working = False
-        except:
+        except Exception:
             pass
 
         if not working:
-            self.assertFalse(True, """It should raise an exception since we 
-                are feeding the worker with a bad dataframe. This dataframe 
+            self.assertFalse(True, """It should raise an exception since we
+                are feeding the worker with a bad dataframe. This dataframe
                 has rows with missing placement or campaign""")
 
     @patch.object(BucketHelper, 'list_files')
     @patch.object(BucketHelper, 'get_csv_file')
-    def test_parse_dcm_duplicate(self, mock_get_file, mock_list_files):
+    def test_parse_dsp_duplicate(self, mock_get_file, mock_list_files):
         mock_list_files.return_value = self.fake_list
         mock_get_file.return_value = self.duplicate_dsp
         worker = DspWorker('dbm')
         worker.download()
         worker.parse()
-        self.assertTrue(worker.dfs[0].shape[0] == 1, """The duplicate rows should
-            be removed!""")
+        self.assertTrue(worker.dfs[0].shape[0] == 1,
+                        "The duplicate rows should be removed!")
 
     @patch.object(BucketHelper, 'list_files')
     @patch.object(BucketHelper, 'get_csv_file')
@@ -504,12 +502,12 @@ class TestWorkers(unittest.TestCase):
         try:
             worker.parse()
             working = False
-        except:
+        except Exception:
             pass
 
         if not working:
-            self.assertFalse(True, """It should raise an exception since we 
-                are feeding the worker with a bad dataframe. This dataframe 
-                has rows with the same dimensions' combination and
-                some difference in the metrics values, this combination should be
+            self.assertFalse(True, """It should raise an exception since we
+                are feeding the worker with a bad dataframe. This dataframe
+                has rows with the same dimensions' combination and some
+                difference in the metrics values, this combination should be
                 unique""")

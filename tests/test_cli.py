@@ -5,11 +5,10 @@
 # python standard
 import os
 import unittest
-import unittest.mock as mock
-from unittest.mock import patch, mock_open
 
 # local imports
 from workers import cli
+
 
 class TestCli(unittest.TestCase):
     def setUp(self):
@@ -19,8 +18,8 @@ class TestCli(unittest.TestCase):
     def test_init(self):
         """ init does not require other params """
         args = self.parser.parse_args(['init'])
-        self.assertTrue(args.action=="init", "Even init is failing...")
-    
+        self.assertTrue(args.action == "init", "Even init is failing...")
+
     def test_run_worker(self):
         args = self.parser.parse_args(["--worker", "dcm"])
         self.assertTrue(args.action == "work", "Action should be work!")
@@ -28,7 +27,7 @@ class TestCli(unittest.TestCase):
 
     def test_run_worker_with_dsp(self):
         args = self.parser.parse_args(["--worker", "dsp", "--dsp", "dbm"])
-        self.assertTrue(args.action == "work", "Action should be work!")        
+        self.assertTrue(args.action == "work", "Action should be work!")
         self.assertTrue(args.dsp == "dbm", "DSP name is wrong!")
 
     def test_run_dsp_without_worker(self):
@@ -41,7 +40,7 @@ class TestCli(unittest.TestCase):
         args = self.parser.parse_args(['--generate-report'])
         self.assertTrue(args.action == "work", "Action should be work!")
         self.assertTrue(args.generate_report, "It should be True!")
-    
+
     def test_server_with_port(self):
         args = self.parser.parse_args(['serve', '--port', '8080'])
         self.assertTrue(args.action == "serve", "Action should be serve!")

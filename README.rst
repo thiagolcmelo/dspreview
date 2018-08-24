@@ -17,6 +17,12 @@ You must specify the following environment variables prior to usage:
 - ``DB_USER`` a user with writing permission
 - ``DB_PASS`` the user's password
 
+If you inted to develop or change something, it is also need:
+
+- ``DB_TEST_NAME`` the name of the database (for testing purposes)
+- ``DB_TEST_USER`` a user with writing permission (for testing purposes)
+- ``DB_TEST_PASS`` the user's password (for testing purposes)
+
 Since this project has support only for GCP (currently), the following 
 environment variables are also mandatory:
 
@@ -79,7 +85,7 @@ where:
 
 In order to launch a worker, you might use the command:
 
-:: 
+::
 
     $ dspreview --worker dcm
 

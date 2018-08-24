@@ -1,107 +1,23 @@
 # -*- coding: utf-8 -*-
 
 # python standard
-import sys
 import os
 import re
-import json
-import subprocess
-# sys.path.insert(0, "./src")
-# sys.path.insert(0, "./src/webapp")
+import string
+from random import choices
 
 # third-party imports
-from sqlalchemy import Column, ForeignKey, Integer, String, Float, DateTime, Boolean
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, validates
-from sqlalchemy.orm.session import Session
-from sqlalchemy import create_engine, Index
-from sqlalchemy.sql import func
+from sqlalchemy import create_engine
 
 # local imports
 from utils.config_helper import ConfigHelper
-from webapp.app import db, create_app
-from webapp.app.models import User, DCM, DSP, Report
-
-# Base = declarative_base()
-
-# class DCM(Base):
-#     """
-#     Create a DCM table
-#     """
-
-#     __tablename__ = 'dcm_raw'
-#     id = Column(Integer, primary_key=True)
-#     date = Column(DateTime, nullable=False)
-#     campaign_id = Column(Integer, nullable=False)
-#     campaign = Column(String(75), nullable=False)
-#     placement_id = Column(Integer, nullable=False)
-#     placement = Column(String(75), nullable=False)
-#     impressions = Column(Float, nullable=False)
-#     clicks = Column(Integer, nullable=False)
-#     reach = Column(Float, nullable=False)
-#     brand = Column(String(25), nullable=False)
-#     sub_brand = Column(String(25), nullable=False)
-#     dsp = Column(String(25), nullable=False)
-#     ad_type = Column(String(25), nullable=False)
-#     created_at = Column(DateTime, nullable=False, server_default=func.now())
-#     updated_at = Column(DateTime, nullable=False, server_default=func.now(), onupdate=func.now())
-
-# # Create an index to not allow reapeated values on these dimensions
-# Index('dcm_index', DCM.date, DCM.brand, DCM.sub_brand, DCM.campaign_id, DCM.campaign, \
-#     DCM.placement_id, DCM.placement, DCM.dsp, DCM.ad_type, unique=True)
 
 
-# class DSP(Base):
-#     """
-#     Create a DSP table
-#     """
-
-#     __tablename__ = 'dsp_raw'
-#     id = Column(Integer, primary_key=True)
-#     date = Column(DateTime, nullable=False)
-#     campaign_id = Column(Integer, nullable=False)
-#     campaign = Column(String(75), nullable=False)
-#     impressions = Column(Float, nullable=False)
-#     clicks = Column(Integer, nullable=False)
-#     cost = Column(Float, nullable=False)
-#     brand = Column(String(25), nullable=False)
-#     sub_brand = Column(String(25), nullable=False)
-#     dsp = Column(String(25), nullable=False)
-#     ad_type = Column(String(25), nullable=False)
-#     created_at = Column(DateTime, nullable=False, server_default=func.now())
-#     updated_at = Column(DateTime, nullable=False, server_default=func.now(), onupdate=func.now())
-
-# # Create an index to not allow reapeated values on these dimensions
-# Index('dsp_index', DSP.date, DSP.brand, DSP.sub_brand, DSP.campaign_id, DSP.campaign, DSP.dsp, DSP.ad_type, unique=True)
-
-
-# class Report(Base):
-#     """
-#     Create a Report table
-#     """
-
-#     __tablename__ = 'report'
-#     id = Column(Integer, primary_key=True)
-#     date = Column(DateTime, nullable=False)
-#     brand = Column(String(25), nullable=False)
-#     sub_brand = Column(String(25), nullable=False)
-#     ad_campaign_id = Column(Integer, nullable=False)
-#     ad_campaign = Column(String(75), nullable=False)
-#     dsp = Column(String(25), nullable=False)
-#     dsp_campaign_id = Column(Integer, nullable=False)
-#     dsp_campaign = Column(String(75), nullable=False)
-#     ad_impressions = Column(Float, nullable=False)
-#     ad_clicks = Column(Integer, nullable=False)
-#     ad_reach = Column(Float, nullable=False)
-#     dsp_impressions = Column(Float, nullable=False)
-#     dsp_clicks = Column(Integer, nullable=False)
-#     dsp_cost = Column(Float, nullable=False)    
-#     created_at = Column(DateTime, nullable=False, server_default=func.now())
-#     updated_at = Column(DateTime, nullable=False, server_default=func.now(), onupdate=func.now())
-
-# # Create an index to not allow reapeated values on these dimensions
-# Index('report_index', Report.date, Report.brand, Report.sub_brand, Report.ad_campaign_id, \
-#     Report.ad_campaign, Report.dsp, Report.dsp_campaign_id, Report.dsp_campaign, unique=True)
+def rand_word(N):
+    lowers = string.ascii_lowercase
+    uppers = string.ascii_uppercase
+    digits = string.digits
+    return ''.join(choices(lowers + uppers + digits, k=N))
 
 
 class SqlHelper(object):
@@ -117,14 +33,19 @@ class SqlHelper(object):
         self.dbuser = os.getenv("DB_USER") or config.get_config("DB_USER")
         self.dbpass = os.getenv("DB_PASS") or config.get_config("DB_PASS")
         self.dbname = os.getenv("DB_NAME") or config.get_config("DB_NAME")
-        self.dbtestname = os.getenv("DB_TEST_NAME") or config.get_config("DB_TEST_NAME")
-        self.dbtestuser = os.getenv("DB_TEST_USER") or config.get_config("DB_TEST_USER")
-        self.dbtestpass = os.getenv("DB_TEST_PASS") or config.get_config("DB_TEST_PASS")
+        self.dbtestname = os.getenv("DB_TEST_NAME") or \
+            config.get_config("DB_TEST_NAME")
+        self.dbtestuser = os.getenv("DB_TEST_USER") or \
+            config.get_config("DB_TEST_USER")
+        self.dbtestpass = os.getenv("DB_TEST_PASS") or \
+            config.get_config("DB_TEST_PASS")
 
         # all these values are necessary
-        if not all([self.dbhost, self.dbport, self.dbuser, self.dbpass, self.dbname]):
-            raise Exception("""It is not possible to connect in the MySQL database
-                            All of the following environment variables must be set
+        if not all([self.dbhost, self.dbport, self.dbuser, self.dbpass,
+                    self.dbname]):
+            raise Exception("""It is not possible to connect in the MySQL
+                            database. All of the following environment
+                            variables must be set
                             - DB_HOST
                             - DB_PORT
                             - DB_USER
@@ -133,59 +54,85 @@ class SqlHelper(object):
                             - DB_TEST_NAME (for development only)
                             - DB_TEST_USER (for development only)
                             - DB_TEST_PASS (for development only)
-                            another possibility woul be the .dspreview.json ;)""")
-        
+                            another possibility woul be the .dspreview.json
+                            ;)""")
+
         # connection string for operational use
-        self.con_str = "mysql+mysqldb://{dbuser}:{dbpass}@{dbhost}:{dbport}/{dbname}".format(\
-            dbuser=self.dbuser, dbpass=self.dbpass, dbhost=self.dbhost, \
-            dbport=self.dbport, dbname=self.dbname)
-        self.flask_str = "mysql://{dbuser}:{dbpass}@{dbhost}:{dbport}/{dbname}".format(\
-            dbuser=self.dbuser, dbpass=self.dbpass, dbhost=self.dbhost, \
-            dbport=self.dbport, dbname=self.dbname)
-        self.test_str = "mysql://{dbuser}:{dbpass}@{dbhost}:{dbport}/{dbname}".format(\
-            dbuser=self.dbtestuser, dbpass=self.dbtestpass, dbhost=self.dbhost, \
-            dbport=self.dbport, dbname=self.dbtestname)
-        
+        full = "mysql+mysqldb://{dbuser}:{dbpass}@{dbhost}:{dbport}/{dbname}"
+        simple = "mysql://{dbuser}:{dbpass}@{dbhost}:{dbport}/{dbname}"
+
+        self.con_str = full.format(dbuser=self.dbuser, dbpass=self.dbpass,
+                                   dbhost=self.dbhost, dbport=self.dbport,
+                                   dbname=self.dbname)
+        self.flask_str = simple.format(dbuser=self.dbuser, dbpass=self.dbpass,
+                                       dbhost=self.dbhost, dbport=self.dbport,
+                                       dbname=self.dbname)
+        self.test_str = simple.format(dbuser=self.dbtestuser,
+                                      dbpass=self.dbtestpass,
+                                      dbhost=self.dbhost, dbport=self.dbport,
+                                      dbname=self.dbtestname)
+
     def initialize_database(self):
+        # create some configuration
+        if not os.path.exists("src/instance"):
+            os.makedirs("src/instance")
+        config_file = "src/instance/config.py"
+        config_lines = []
+
+        track_mod_line = "SQLALCHEMY_TRACK_MODIFICATIONS=False\n"
+        sql_config_line = "SQLALCHEMY_DATABASE_URI='{constr}'\n"
+        sql_config_line = sql_config_line.format(constr=self.flask_str)
+        secret_key_line = "SECRET_KEY='{secret}'\n"
+        secret_key_line = secret_key_line.format(secret=rand_word(20))
+
+        if os.path.exists(config_file):
+            with open(config_file, "r") as f:
+                config_lines = f.readlines()
+
+        has_uri_cfg = False
+        has_secret = False
+        has_track_mod = False
+
+        for i in range(len(config_lines)):
+            if re.search(".*SQLALCHEMY_DATABASE_URI.*", config_lines[i]):
+                config_lines[i] = sql_config_line
+                has_uri_cfg = True
+            if re.search(".*SECRET_KEY.*", config_lines[i]):
+                has_secret = True
+            if re.search(".*SQLALCHEMY_TRACK_MODIFICATIONS.*",
+                         config_lines[i]):
+                has_track_mod = True
+
+        if not has_uri_cfg:
+            config_lines.append(sql_config_line)
+        if not has_secret:
+            config_lines.append(secret_key_line)
+        if not has_track_mod:
+            config_lines.append(track_mod_line)
+
+        with open(config_file, "w") as f:
+            for l in config_lines:
+                f.write(l)
         # """
         # Initialize the whole database
         # """
         # pass in test configurations
-        app = create_app('production')
-        app.config.update(
-            SQLALCHEMY_DATABASE_URI=self.flask_str
-        )
-        with app.app_context():
-            db.create_all()
-
-        # # set the SQLALCHEMY_DATABASE_URI for flask
-        # config_file = "src/webapp/instance/config.py"
-        # config_lines = []
-        # sql_config_line = "SQLALCHEMY_DATABASE_URI = '{constr}'\n".format(constr=self.flask_str)
-        # with open(config_file, "r") as f:
-        #     config_lines = f.readlines()
-        # has_uri_cfg = False
-        # for i in range(len(config_lines)):
-        #     if re.search(".*SQLALCHEMY_DATABASE_URI.*", config_lines[i]):
-        #         config_lines[i] = sql_config_line
-        #         has_uri_cfg = True
-        # if not has_uri_cfg:
-        #     config_lines.append(sql_config_line)
-        # with open(config_file, "w") as f:
-        #     for l in config_lines:
-        #         f.write(l)
-        # # First initialize things related to Flask
-        # #sys.path.append("src/webapp")
-
+        # app = create_app('production')
+        # app.config.update(
+        #     SQLALCHEMY_DATABASE_URI=self.flask_str
+        # )
+        # with app.app_context():
+        #     db.create_all()
+        # set the SQLALCHEMY_DATABASE_URI for flask
 
         # # Then initialize things related to the operational
         # engine = create_engine(self.con_str)
         # Base.metadata.bind = engine
         # Base.metadata.create_all(engine)
 
-    
     def get_connection(self):
         """
         Create a connection to the MySQL database
         """
-        return create_engine(self.con_str, pool_recycle=1, pool_timeout=57600).connect()
+        return create_engine(self.con_str, pool_recycle=1,
+                             pool_timeout=57600).connect()

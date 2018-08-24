@@ -4,22 +4,19 @@
 
 # python standard
 import sys
-import os.path
 import argparse
-import re
-# sys.path.insert(0, "./src")
-# sys.path.insert(0, "./src/webapp")
 
 # local imports
 from utils.sql_helper import SqlHelper
 from utils.bucket_helper import BucketHelper
 from workers.worker import DcmWorker, DspWorker, generate_report
-from webapp.run import app
+
 
 class ChangeWorker(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
         namespace.worker = 'dsp'
         setattr(namespace, self.dest, values)
+
 
 def create_parser():
     parser = argparse.ArgumentParser(description="""
@@ -28,20 +25,23 @@ def create_parser():
     report.
     """)
     parser.add_argument("action", type=str,
-        help="""It might be 'init for initialize the database or 'serve' for
-            serving the web app. The default is work, which is about puting
-            a worker to run its task.""",
-        default="work", nargs='?', const=1)
-    parser.add_argument("--worker", "-w", type=str,
-        help="The worker to execute", choices=['dcm','dsp'])
+                        help="""It might be 'init for initialize the database
+                        or 'serve' for serving the web app. The default is
+                        work, which is about puting a worker to run its
+                        task.""", default="work", nargs='?', const=1)
+    parser.add_argument("--worker", "-w",
+                        type=str, help="The worker to execute",
+                        choices=['dcm', 'dsp'])
     parser.add_argument("--dsp", "-d", type=str, default='',
-        help="The specific DSP worker to execute", action=ChangeWorker)
-    parser.add_argument("--generate-report", "-g",
-        help="Generate report", required=False, default=False,
-        action='store_true')
+                        help="The specific DSP worker to execute",
+                        action=ChangeWorker)
+    parser.add_argument("--generate-report", "-g", help="Generate report",
+                        required=False, default=False, action='store_true')
     parser.add_argument("--port", "-p", type=int,
-        help="The port for serve the web app", default=8080, required=False)
+                        help="The port for serve the web app",
+                        default=8080, required=False)
     return parser
+
 
 def manager(args):
     """this function will execute the proper commands according to the
@@ -51,7 +51,7 @@ def manager(args):
     ------
     args : array_like
         a list of arguments
-    
+
     """
     if args.action == "init":
         sql = SqlHelper()
@@ -73,7 +73,10 @@ def manager(args):
                 w.download().parse().upload()
 
     elif args.action == "serve":
+        # keep these together for sanity reasons
+        from webapp.run import app
         app.run(port=args.port)
+
 
 def main():
     """
@@ -86,6 +89,7 @@ def main():
     else:
         args = parser.parse_args()
     manager(args)
+
 
 if __name__ == '__main__':
     main()
