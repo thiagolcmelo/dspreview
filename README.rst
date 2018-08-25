@@ -28,7 +28,6 @@ environment variables are also mandatory:
 
 - ``GOOGLE_APPLICATION_CREDENTIALS`` the json file for an account with admin permissions for the `Storage`_ service.
 - ``GCP_BUCKET`` the bucket where the ``.csv`` file will be placed
-- ``GCP_BUCKET_ARCHIVE`` the bucket where the ``.csv`` file will be archive after processed.
 
 A much better option would be to set all these variables in a file named ``.dspreview.csg`` in the users home folder:
 

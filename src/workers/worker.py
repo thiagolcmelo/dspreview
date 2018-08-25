@@ -17,7 +17,6 @@ from webapp.app.queries import GENERATE_REPORT
 ############################################################################
 logger = logging.getLogger('dspreview_application')
 con = get_connection()
-context = get_context()
 ############################################################################
 
 
@@ -190,7 +189,7 @@ class Worker(object):
         Load the classifications for figuring out the brand, sub brand, and
         dsp according to the information in campaign and placement fields
         """
-        with context:
+        with get_context():
             self.for_brand = Classification.query \
                 .filter(and_(
                             Classification.brand.isnot(None),
