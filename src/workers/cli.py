@@ -4,11 +4,12 @@
 
 # python standard
 import sys
+import time
 import argparse
 import logging
 
 # local imports
-from utils.sql_helper import SqlHelper
+from utils.sql_helper import initialize_database
 from utils.bucket_helper import BucketHelper
 from workers.worker import DcmWorker, DspWorker, generate_report
 
@@ -19,7 +20,7 @@ logging.basicConfig(level=logging.DEBUG,
                     datefmt='%Y-%m-%d %H:%M',
                     filename='/tmp/dspreview_application.log',
                     filemode='w')
-
+logging.getLogger('googleapiclient.discovery_cache').setLevel(logging.CRITICAL)
 console = logging.StreamHandler()
 console.setLevel(logging.INFO)
 formatter = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
@@ -57,6 +58,9 @@ def create_parser():
     parser.add_argument("--port", "-p", type=int,
                         help="The port for serve the web app",
                         default=8080, required=False)
+    parser.add_argument("--delay", "-t", type=int,
+                        help="Delay for operation",
+                        default=5, required=False)
     return parser
 
 
@@ -72,8 +76,7 @@ def manager(args):
     """
     if args.action == "init":
         logger.info("Initializing the environment")
-        sql = SqlHelper()
-        sql.initialize_database()
+        initialize_database()
     elif args.action == "work":
         if args.generate_report:
             logger.info("Generating report")
@@ -89,10 +92,12 @@ def manager(args):
             else:
                 logger.info("Triggering DSP workers")
                 dsp_opts = BucketHelper.dsp_available()
+                logger.info("Found [{}]".format(", ".join(dsp_opts)))
                 for opt in dsp_opts:
+                    logger.info("Creating structure for [{}]".format(opt))
                     workers.append(DspWorker(opt))
             for w in workers:
-                w.download().parse().classify().upload(raw=True).upload()
+                w.extract().transform().load()
 
     elif args.action == "serve":
         # keep these together for sanity reasons
@@ -104,6 +109,19 @@ def manager(args):
             logger.info("Server shutdown")
         except Exception as err:
             logger.exception(err)
+
+    elif args.action == "operate":
+        logger.info("Operation requested")
+        delay = args.delay
+        while True:
+            try:
+                time.sleep(delay)
+            except KeyboardInterrupt:
+                break
+            except Exception as err:
+                logger.exception(err)
+                time.sleep(2*delay)
+        logger.info("Operation stopped")
 
     logger.info("Finish")
 

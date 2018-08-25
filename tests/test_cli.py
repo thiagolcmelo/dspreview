@@ -5,9 +5,12 @@
 # python standard
 import os
 import unittest
+import logging
 
 # local imports
 from workers import cli
+
+logging.disable(logging.CRITICAL)
 
 
 class TestCli(unittest.TestCase):

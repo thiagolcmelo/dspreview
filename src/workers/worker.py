@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-"""
-"""
 
 # python standard
 import re
@@ -12,12 +10,14 @@ from sqlalchemy import and_
 
 # local imports
 from utils.bucket_helper import BucketHelper
-from utils.sql_helper import SqlHelper
+from utils.sql_helper import get_connection, get_context
 from webapp.app.models import Classification
 from webapp.app.queries import GENERATE_REPORT
 
 ############################################################################
 logger = logging.getLogger('dspreview_application')
+con = get_connection()
+context = get_context()
 ############################################################################
 
 
@@ -29,14 +29,13 @@ class Worker(object):
     """
 
     def __init__(self):
-        self.bucket = BucketHelper()
-        self.sqlhelper = SqlHelper()
         self.dfs = []
+        self.dfs_classified = []
         self.pattern = None
         self.dsp = None
         self.load_classifications()
 
-    def download(self, pattern=None):
+    def extract(self, pattern=None):
         """
         this function checks whether there are files in the GCP bucket
         with the given `pattern`. If there are, those files will be
@@ -53,15 +52,36 @@ class Worker(object):
         -------
         The object instace for use in chain calls
         """
-        logger.info("Downloading")
+        bucket = BucketHelper()
         pattern = pattern or self.pattern
         self.dfs = []
-        self.dfs_classified = []
-        files = self.bucket.list_files()
+        files = bucket.list_files()
         for f in files:
-            if re.search(pattern, f['name']):
-                self.dfs.append(self.bucket.get_csv_file(f['name']))
+            fname = f['name']
+            if re.search(pattern, fname):
+                logger.info("Extracting file [{}]".format(fname))
+                self.dfs.append(bucket.get_csv_file(fname))
         return self
+
+    def transform(self):
+        """
+        Execute all transformation that apply
+
+        Returns
+        -------
+        The object instace for use in chain calls
+        """
+        return self.parse().classify()
+
+    def load(self):
+        """
+        Save data to database
+
+        Returns
+        -------
+        The object instace for use in chain calls
+        """
+        return self.upload(raw=True).upload()
 
     def upload(self, raw=False):
         """this is a basic upload to the mysql database, since the schema
@@ -78,19 +98,18 @@ class Worker(object):
         -------
         The object instace for use in chain calls
         """
-        con = self.sqlhelper.get_connection()
-
         if raw:
-            logger.info("Uploading [raw]")
+            logmsg = "Uploading [{}] [raw]".format(self.dsp or "DCM")
             dims = self.dimensions_raw
             table_type = 'raw'
             dfs = self.dfs
         else:
-            logger.info("Uploading [classified]")
+            logmsg = "Uploading [{}] [classified]".format(self.dsp or "DCM")
             dims = self.dimensions
             table_type = 'classified'
             dfs = self.dfs_classified
 
+        logger.info(logmsg)
         table = "{}_{}".format('dsp' if self.dsp else 'dcm', table_type)
         table_temp = "{}_temp".format(table)
 
@@ -171,7 +190,7 @@ class Worker(object):
         Load the classifications for figuring out the brand, sub brand, and
         dsp according to the information in campaign and placement fields
         """
-        with self.sqlhelper.get_context():
+        with context:
             self.for_brand = Classification.query \
                 .filter(and_(
                             Classification.brand.isnot(None),
@@ -222,7 +241,7 @@ class DcmWorker(Worker):
         -------
         The object instace for use in chain calls
         """
-        logger.info("Parsing")
+        logger.info("Parsing DCM file")
         for i, df in enumerate(self.dfs):
             df.date = pd.to_datetime(df.date)
             df.campaign_id = df.campaign_id.replace(
@@ -246,6 +265,10 @@ class DcmWorker(Worker):
                     It is not a problem of suplicate rows, it is a problem
                     of some combination having different values
                     of impressions, clicks, or cost.""")
+
+            if not all(df.campaign.values) or not all(df.placement.values):
+                raise Exception("""There are missing values in campaign or
+                                placement fields""")
 
             self.dfs[i] = df.copy()
         return self
@@ -292,7 +315,7 @@ class DspWorker(Worker):
         -------
         The object instace for use in chain calls
         """
-        logger.info("Parsing")
+        logger.info("Parsing DSP file [{}]".format(self.dsp))
         for i, df in enumerate(self.dfs):
             df.date = pd.to_datetime(df.date)
             df.campaign_id = df.campaign_id.replace(
@@ -315,6 +338,9 @@ class DspWorker(Worker):
                     of some combination having different values
                     of impressions, clicks, or cost.""")
 
+            if not all(df.campaign.values):
+                raise Exception("There are missing values in campaign field")
+
             self.dfs[i] = df.copy()
 
         return self
@@ -323,9 +349,8 @@ class DspWorker(Worker):
 def generate_report():
     """ this function generates the full report, joining data from DCM and
     the DSPs. Since the files might have arbitrary dates, the option is to
-    generate the whole report table again. It is not that bad though
+    generate the whole report table again.
     """
-    sqlhelper = SqlHelper()
-    con = sqlhelper.get_connection()
+    con = get_connection()
     connection = con.connect()
     connection.execute(GENERATE_REPORT)

@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-Test workers, how they should download stuff, how they should parse .csv
+Test workers, how they should extract stuff, how they should parse .csv
 files, and how they should store it in the database.
 """
 
 # python standard
 import unittest
+import logging
 from unittest.mock import patch
 
 # third-party imports
@@ -15,6 +16,8 @@ import numpy as np
 # local imports
 from utils.bucket_helper import BucketHelper
 from workers.worker import Worker, DcmWorker, DspWorker
+
+logging.disable(logging.CRITICAL)
 
 
 class TestWorkers(unittest.TestCase):
@@ -238,20 +241,20 @@ class TestWorkers(unittest.TestCase):
 
     @patch.object(BucketHelper, 'list_files')
     @patch.object(BucketHelper, 'get_csv_file')
-    def test_download(self, mock_get_file, mock_list_files):
+    def test_extract(self, mock_get_file, mock_list_files):
         mock_list_files.return_value = self.fake_list
         mock_get_file.return_value = pd.DataFrame([{'a': 1, 'b': 3}])
 
         worker = Worker()
-        worker.download('^dcm.*')
+        worker.extract('^dcm.*')
         mock_get_file.assert_called_with('dcm.csv')
 
         worker = Worker()
-        worker.download('^dbm.*')
+        worker.extract('^dbm.*')
         mock_get_file.assert_called_with('dbm.csv')
 
         worker = Worker()
-        worker.download('^mediamath.*')
+        worker.extract('^mediamath.*')
         mock_get_file.assert_called_with('mediamath.csv')
 
     @patch.object(BucketHelper, 'list_files')
@@ -261,7 +264,7 @@ class TestWorkers(unittest.TestCase):
         mock_get_file.return_value = self.good_dcm
 
         worker = DcmWorker()
-        worker.download('^dcm.*')
+        worker.extract('^dcm.*')
         worker.parse()
         self.assertTrue(len(worker.dfs) == 1, "There should be one DataFrame!")
 
@@ -275,14 +278,10 @@ class TestWorkers(unittest.TestCase):
             'placement',
             'impressions',
             'clicks',
-            'reach',
-            'brand',
-            'sub_brand',
-            'dsp',
-            'ad_type',
+            'reach'
         ]
 
-        self.assertTrue(sorted(columns_has) == sorted(columns_should), """
+        self.assertListEqual(sorted(columns_has), sorted(columns_should), """
             Missing some column! They should be:
                 - date
                 - campaign_id
@@ -292,31 +291,20 @@ class TestWorkers(unittest.TestCase):
                 - impressions
                 - clicks
                 - reach
-                - brand
-                - sub_brand
-                - dsp
-                - ad_type
             """)
 
-        self.assertTrue(parsed_df.date.dtype == np.dtype('datetime64[ns]'),
-                        """date should be parsed to np.datetime64""")
-        self.assertTrue(parsed_df.campaign_id.dtype == np.dtype('int64'),
-                        """campaign_id should be parsed to np.int64""")
-        self.assertTrue(parsed_df.placement_id.dtype == np.dtype('int64'),
-                        """placement_id should be parsed to np.int64""")
-        self.assertTrue(parsed_df.impressions.dtype == np.dtype('float64'),
-                        """impressions should be parsed to np.float64""")
-        self.assertTrue(parsed_df.clicks.dtype == np.dtype('int64'),
-                        """clicks should be parsed to np.int64""")
-        self.assertTrue(parsed_df.reach.dtype == np.dtype('float64'),
-                        """reach should be parsed to np.float64""")
-
-        self.assertTrue(parsed_df.loc[0].brand == "acme", "Invalid brand")
-        self.assertTrue(parsed_df.loc[0].sub_brand ==
-                        "asprin", "Invalid sub_brand")
-        self.assertTrue(parsed_df.loc[0].dsp == "mediamath", "Invalid dsp")
-        self.assertTrue(parsed_df.loc[0].ad_type ==
-                        "programmatic", "Invalid dsp")
+        self.assertEqual(parsed_df.date.dtype, np.dtype('datetime64[ns]'),
+                         """date should be parsed to np.datetime64""")
+        self.assertEqual(parsed_df.campaign_id.dtype, np.dtype('int64'),
+                         """campaign_id should be parsed to np.int64""")
+        self.assertEqual(parsed_df.placement_id.dtype, np.dtype('int64'),
+                         """placement_id should be parsed to np.int64""")
+        self.assertEqual(parsed_df.impressions.dtype, np.dtype('float64'),
+                         """impressions should be parsed to np.float64""")
+        self.assertEqual(parsed_df.clicks.dtype, np.dtype('int64'),
+                         """clicks should be parsed to np.int64""")
+        self.assertEqual(parsed_df.reach.dtype, np.dtype('float64'),
+                         """reach should be parsed to np.float64""")
 
     @patch.object(BucketHelper, 'list_files')
     @patch.object(BucketHelper, 'get_csv_file')
@@ -324,7 +312,7 @@ class TestWorkers(unittest.TestCase):
         mock_list_files.return_value = self.fake_list
         mock_get_file.return_value = self.missing_fine_dcm
         worker = DcmWorker()
-        worker.download()
+        worker.extract()
         worker.parse()
         self.assertTrue(len(worker.dfs) == 1, "There should be on DataFrame!")
         self.assertTrue(worker.dfs[0].loc[0].clicks ==
@@ -338,20 +326,9 @@ class TestWorkers(unittest.TestCase):
         mock_list_files.return_value = self.fake_list
         mock_get_file.return_value = self.missing_bad_dcm
         worker = DcmWorker()
-        worker.download()
-
-        # very bad approach...
-        working = True
-        try:
+        worker.extract()
+        with self.assertRaises(Exception):
             worker.parse()
-            working = False
-        except Exception:
-            pass
-
-        if not working:
-            self.assertFalse(True, """It should raise an exception since we
-                are feeding the worker with a bad dataframe. This dataframe
-                has rows with missing placement or campaign""")
 
     @patch.object(BucketHelper, 'list_files')
     @patch.object(BucketHelper, 'get_csv_file')
@@ -359,7 +336,7 @@ class TestWorkers(unittest.TestCase):
         mock_list_files.return_value = self.fake_list
         mock_get_file.return_value = self.duplicate_dcm
         worker = DcmWorker()
-        worker.download()
+        worker.extract()
         worker.parse()
         self.assertTrue(worker.dfs[0].shape[0] == 1,
                         "The duplicate rows should be removed!")
@@ -370,7 +347,7 @@ class TestWorkers(unittest.TestCase):
         mock_list_files.return_value = self.fake_list
         mock_get_file.return_value = self.bad_dcm
         worker = DcmWorker()
-        worker.download()
+        worker.extract()
 
         # very bad approach...
         working = True
@@ -394,7 +371,7 @@ class TestWorkers(unittest.TestCase):
         mock_get_file.return_value = self.good_dsp
 
         worker = DspWorker('dbm')
-        worker.download()
+        worker.extract()
         worker.parse()
         self.assertTrue(len(worker.dfs) == 1, "There should be one DataFrame!")
 
@@ -406,14 +383,10 @@ class TestWorkers(unittest.TestCase):
             'campaign',
             'impressions',
             'clicks',
-            'cost',
-            'brand',
-            'sub_brand',
-            'dsp',
-            'ad_type',
+            'cost'
         ]
 
-        self.assertTrue(sorted(columns_has) == sorted(columns_should), """
+        self.assertListEqual(sorted(columns_has), sorted(columns_should), """
             Missing some column! They should be:
                 - date
                 - campaign_id
@@ -421,29 +394,18 @@ class TestWorkers(unittest.TestCase):
                 - impressions
                 - clicks
                 - cost
-                - brand
-                - sub_brand
-                - dsp
-                - ad_type
             """)
 
-        self.assertTrue(parsed_df.date.dtype == np.dtype('datetime64[ns]'),
-                        """date should be parsed to np.datetime64""")
-        self.assertTrue(parsed_df.campaign_id.dtype == np.dtype('int64'),
-                        """campaign_id should be parsed to np.int64""")
-        self.assertTrue(parsed_df.impressions.dtype == np.dtype('float64'),
-                        """impressions should be parsed to np.float64""")
-        self.assertTrue(parsed_df.clicks.dtype == np.dtype('int64'),
-                        """clicks should be parsed to np.int64""")
-        self.assertTrue(parsed_df.cost.dtype == np.dtype('float64'),
-                        """reach should be parsed to np.float64""")
-
-        self.assertTrue(parsed_df.loc[0].brand == "acme", "Invalid brand")
-        self.assertTrue(parsed_df.loc[0].sub_brand ==
-                        "asprin", "Invalid sub_brand")
-        self.assertTrue(parsed_df.loc[0].dsp == "dbm", "Invalid dsp")
-        self.assertTrue(parsed_df.loc[0].ad_type ==
-                        "youtube", "Invalid dsp")
+        self.assertEqual(parsed_df.date.dtype, np.dtype('datetime64[ns]'),
+                         """date should be parsed to np.datetime64""")
+        self.assertEqual(parsed_df.campaign_id.dtype, np.dtype('int64'),
+                         """campaign_id should be parsed to np.int64""")
+        self.assertEqual(parsed_df.impressions.dtype, np.dtype('float64'),
+                         """impressions should be parsed to np.float64""")
+        self.assertEqual(parsed_df.clicks.dtype, np.dtype('int64'),
+                         """clicks should be parsed to np.int64""")
+        self.assertEqual(parsed_df.cost.dtype, np.dtype('float64'),
+                         """reach should be parsed to np.float64""")
 
     @patch.object(BucketHelper, 'list_files')
     @patch.object(BucketHelper, 'get_csv_file')
@@ -451,11 +413,11 @@ class TestWorkers(unittest.TestCase):
         mock_list_files.return_value = self.fake_list
         mock_get_file.return_value = self.missing_fine_dsp
         worker = DspWorker('dbm')
-        worker.download()
+        worker.extract()
         worker.parse()
-        self.assertTrue(len(worker.dfs) == 1, "There should be on DataFrame!")
-        self.assertTrue(worker.dfs[0].loc[0].clicks ==
-                        0, "Clicks should be zero")
+        self.assertEqual(len(worker.dfs), 1, "There should be on DataFrame!")
+        self.assertEqual(worker.dfs[0].loc[0].clicks, 0,
+                         "Clicks should be zero")
 
     @patch.object(BucketHelper, 'list_files')
     @patch.object(BucketHelper, 'get_csv_file')
@@ -463,20 +425,9 @@ class TestWorkers(unittest.TestCase):
         mock_list_files.return_value = self.fake_list
         mock_get_file.return_value = self.missing_bad_dsp
         worker = DspWorker('dbm')
-        worker.download()
-
-        # very bad approach...
-        working = True
-        try:
+        worker.extract()
+        with self.assertRaises(Exception):
             worker.parse()
-            working = False
-        except Exception:
-            pass
-
-        if not working:
-            self.assertFalse(True, """It should raise an exception since we
-                are feeding the worker with a bad dataframe. This dataframe
-                has rows with missing placement or campaign""")
 
     @patch.object(BucketHelper, 'list_files')
     @patch.object(BucketHelper, 'get_csv_file')
@@ -484,10 +435,10 @@ class TestWorkers(unittest.TestCase):
         mock_list_files.return_value = self.fake_list
         mock_get_file.return_value = self.duplicate_dsp
         worker = DspWorker('dbm')
-        worker.download()
+        worker.extract()
         worker.parse()
-        self.assertTrue(worker.dfs[0].shape[0] == 1,
-                        "The duplicate rows should be removed!")
+        self.assertEqual(worker.dfs[0].shape[0], 1,
+                         "The duplicate rows should be removed!")
 
     @patch.object(BucketHelper, 'list_files')
     @patch.object(BucketHelper, 'get_csv_file')
@@ -495,19 +446,7 @@ class TestWorkers(unittest.TestCase):
         mock_list_files.return_value = self.fake_list
         mock_get_file.return_value = self.bad_dsp
         worker = DspWorker('dbm')
-        worker.download()
+        worker.extract()
 
-        # very bad approach...
-        working = True
-        try:
+        with self.assertRaises(Exception):
             worker.parse()
-            working = False
-        except Exception:
-            pass
-
-        if not working:
-            self.assertFalse(True, """It should raise an exception since we
-                are feeding the worker with a bad dataframe. This dataframe
-                has rows with the same dimensions' combination and some
-                difference in the metrics values, this combination should be
-                unique""")

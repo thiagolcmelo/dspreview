@@ -57,6 +57,7 @@ class BucketHelper(object):
     def service(self):
         """it avoids the creation of multiple services"""
         if not self._service:
+            logger.info("Creating Google API client")
             self._service = googleapiclient.discovery.build('storage', 'v1')
         return self._service
 
@@ -71,6 +72,7 @@ class BucketHelper(object):
            `[{'name': 'dbm.csv', 'contentType': 'text/csv', 'size': '21645'}]`
         """
         fields = 'nextPageToken,items(name,size,contentType,metadata(my-key))'
+        logger.info("Listing files in bucket [{}]".format(self.bucket))
         req = self.service.objects().list(bucket=self.bucket, fields=fields)
         all_objects = []
         while req:
@@ -92,6 +94,7 @@ class BucketHelper(object):
         -------
         Pandas dataframe with the parsed .csv file or None if it does not exist
         """
+        logger.info("Downloading [{}] from [{}]".format(filename, self.bucket))
         req = self.service.objects().get_media(bucket=self.bucket,
                                                object=filename)
         with tempfile.TemporaryFile(mode='w+b') as tmpfile:
@@ -145,6 +148,7 @@ class BucketHelper(object):
         -------
         array of DSPs' files names
         """
+        logger.info("Trying to list DSP files")
         with cls() as inst:
             files_list = inst.list_files()
             dsp_files = []

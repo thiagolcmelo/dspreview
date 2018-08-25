@@ -35,6 +35,8 @@ class ConfigHelper(object):
         """
         Params
         -----
+        name : string
+            the nome of the parameter to be searched in the config file
         """
         return self.config_info.get(name)
 

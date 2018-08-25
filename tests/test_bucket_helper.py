@@ -4,11 +4,14 @@
 import os
 import unittest
 import unittest.mock as mock
+import logging
 from unittest.mock import patch, mock_open
 
 # local imports
 from utils.bucket_helper import BucketHelper
 from utils.config_helper import ConfigHelper
+
+logging.disable(logging.CRITICAL)
 
 
 class TestBucketHelper(unittest.TestCase):
