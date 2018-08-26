@@ -38,7 +38,7 @@ class ConfigHelper(object):
         name : string
             the nome of the parameter to be searched in the config file
         """
-        return self.config_info.get(name)
+        return os.getenv(name) or self.config_info.get(name)
 
     def set_config(self, name, value):
         self.config_info[name] = value

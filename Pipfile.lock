@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "5ea9f4e19d4fd056051b7e2dce497c17ca2bda326da44b72863af3297af09fca"
+            "sha256": "a3fa78f1fa0cf66485b7341b8970e195fa9c78f2c170b2478cf9fe81200bc834"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -32,10 +32,10 @@
         },
         "certifi": {
             "hashes": [
-                "sha256:4c1d68a1408dd090d2f3a869aa94c3947cc1d967821d1ed303208c9f41f0f2f4",
-                "sha256:b6e8b28b2b7e771a41ecdd12d4d43262ecab52adebbafa42c77d6b57fb6ad3a4"
+                "sha256:376690d6f16d32f9d1fe8932551d80b23e9d393a8578c5633a2ed39a64861638",
+                "sha256:456048c7e371c089d0a77a5212fb37a2c2dce1e24146e3b7e0261736aaeaa22a"
             ],
-            "version": "==2018.8.13"
+            "version": "==2018.8.24"
         },
         "chardet": {
             "hashes": [
@@ -243,6 +243,14 @@
             ],
             "index": "pypi",
             "version": "==0.23.4"
+        },
+        "pika": {
+            "hashes": [
+                "sha256:035e4e46069a81d1135eed27cf74ef0fedf9a0a32285966717233529e9f69bae",
+                "sha256:306145b8683e016d81aea996bcaefee648483fc5a9eb4694bb488f54df54a751"
+            ],
+            "index": "pypi",
+            "version": "==0.12.0"
         },
         "pkginfo": {
             "hashes": [

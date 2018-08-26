@@ -34,11 +34,11 @@ def get_connection_info():
     ci = namedtuple("ConnectionInfo",
                     "dbhost, dbport, dbuser, dbpass, dbname")
     config = ConfigHelper()
-    ci.dbhost = os.getenv("DB_HOST") or config.get_config("DB_HOST")
-    ci.dbport = os.getenv("DB_PORT") or config.get_config("DB_PORT")
-    ci.dbuser = os.getenv("DB_USER") or config.get_config("DB_USER")
-    ci.dbpass = os.getenv("DB_PASS") or config.get_config("DB_PASS")
-    ci.dbname = os.getenv("DB_NAME") or config.get_config("DB_NAME")
+    ci.dbhost = config.get_config("DB_HOST")
+    ci.dbport = config.get_config("DB_PORT")
+    ci.dbuser = config.get_config("DB_USER")
+    ci.dbpass = config.get_config("DB_PASS")
+    ci.dbname = config.get_config("DB_NAME")
     return ci
 
 
@@ -46,11 +46,11 @@ def get_connection_info_test():
     ci = namedtuple("ConnectionInfoTest",
                     "dbhost, dbport, dbuser, dbpass, dbname")
     config = ConfigHelper()
-    ci.dbhost = os.getenv("DB_HOST") or config.get_config("DB_HOST")
-    ci.dbport = os.getenv("DB_PORT") or config.get_config("DB_PORT")
-    ci.dbname = os.getenv("DB_TEST_NAME") or config.get_config("DB_TEST_NAME")
-    ci.dbuser = os.getenv("DB_TEST_USER") or config.get_config("DB_TEST_USER")
-    ci.dbpass = os.getenv("DB_TEST_PASS") or config.get_config("DB_TEST_PASS")
+    ci.dbhost = config.get_config("DB_HOST")
+    ci.dbport = config.get_config("DB_PORT")
+    ci.dbname = config.get_config("DB_TEST_NAME")
+    ci.dbuser = config.get_config("DB_TEST_USER")
+    ci.dbpass = config.get_config("DB_TEST_PASS")
     return ci
 
 

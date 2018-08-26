@@ -11,7 +11,7 @@ import logging
 # local imports
 from utils.sql_helper import initialize_database
 from utils.bucket_helper import BucketHelper
-from workers.worker import DcmWorker, DspWorker, generate_report
+from workers.worker import DcmWorker, DspWorker, Manager, generate_report
 
 ############################################################################
 str_format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -32,7 +32,13 @@ logger = logging.getLogger('dspreview_application')
 
 class ChangeWorker(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
-        namespace.worker = 'dsp'
+        namespace.worker = "dsp"
+        setattr(namespace, self.dest, values)
+
+
+class ChangeManager(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        namespace.action = "manage"
         setattr(namespace, self.dest, values)
 
 
@@ -59,8 +65,10 @@ def create_parser():
                         help="The port for serve the web app",
                         default=8080, required=False)
     parser.add_argument("--delay", "-t", type=int,
-                        help="Delay for operation",
-                        default=5, required=False)
+                        help="Delay for restart in case of error",
+                        default=20, required=False)
+    parser.add_argument("--poke", "-k", type=str, help="Add msg to queue",
+                        required=False, action=ChangeManager)
     return parser
 
 
@@ -77,6 +85,11 @@ def manager(args):
     if args.action == "init":
         logger.info("Initializing the environment")
         initialize_database()
+
+    elif args.action == "manage":
+        with Manager() as m:
+            m.schedule_task(args.poke)
+
     elif args.action == "work":
         if args.generate_report:
             logger.info("Generating report")
@@ -115,12 +128,13 @@ def manager(args):
         delay = args.delay
         while True:
             try:
-                time.sleep(delay)
+                with Manager() as m:
+                    m.check_schedule()
             except KeyboardInterrupt:
                 break
             except Exception as err:
                 logger.exception(err)
-                time.sleep(2*delay)
+                time.sleep(delay)
         logger.info("Operation stopped")
 
     logger.info("Finish")

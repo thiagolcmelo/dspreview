@@ -31,10 +31,8 @@ class BucketHelper(object):
 
     def __init__(self):
         config = ConfigHelper()
-        self.bucket = os.environ.get("GCP_BUCKET") or \
-            config.get_config("GCP_BUCKET")
-        self.account = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS") or \
-            config.get_config("GOOGLE_APPLICATION_CREDENTIALS")
+        self.bucket = config.get_config("GCP_BUCKET")
+        self.account = config.get_config("GOOGLE_APPLICATION_CREDENTIALS")
 
         # all these values are necessary
         if not self.bucket or not self.account:

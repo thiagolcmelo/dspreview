@@ -6,8 +6,8 @@ tools for launching the workers responsible for parsing ``.csv`` files and
 storing them in a MySQL database. There is also a web app where it is possible
 to have a complete report of the operation.
 
-Usage
------
+Configuration
+-------------
 
 You must specify the following environment variables prior to usage:
 
@@ -28,6 +28,16 @@ environment variables are also mandatory:
 
 - ``GOOGLE_APPLICATION_CREDENTIALS`` the json file for an account with admin permissions for the `Storage`_ service.
 - ``GCP_BUCKET`` the bucket where the ``.csv`` file will be placed
+
+It is possible to set the workers to consume a RabbitMQ queue, so it is necessary
+to specify the server info:
+
+- ``MQ_HOST`` the RabbitMQ server ip address
+- ``MQ_PORT`` the RabbitMQ port
+- ``MQ_VHOST`` the RabbitMQ virtual host
+- ``MQ_USER`` the RabbitMQ user
+- ``MQ_PASS`` the RabbitMQ password
+- ``MQ_QUEUE`` the RabbitMQ queue name (we might change for workers operating through exchanges later, so we can have multiple workers operating at the same time, but for now lets use one queue).
 
 A much better option would be to set all these variables in a file named ``.dspreview.csg`` in the users home folder:
 
@@ -122,6 +132,30 @@ The web app might be run through:
     $ dspreview serve --port 80
 
 The default port is ``80``
+
+Finally, it is possible to put the worker to run in a loop, in this case, it
+will consume a queue in the RabbitMQ. The messages must be:
+
+- "dcm" for the DCM worker
+- "dsp" for running all DSP workers
+- "dsp.dbm" for running a specific DSP worker
+
+The worker might be launched as:
+
+::
+
+    $ dspreview operate
+
+It is possible to add itens to the queue through:
+
+::
+
+    $ dspreview --poke "dsp.dbm"
+
+
+Usage
+-----
+
 
 
 Preparing for Development

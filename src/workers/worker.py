@@ -7,9 +7,11 @@ import logging
 # third-party imports
 import pandas as pd
 from sqlalchemy import and_
+import pika
 
 # local imports
 from utils.bucket_helper import BucketHelper
+from utils.config_helper import ConfigHelper
 from utils.sql_helper import get_connection, get_context
 from webapp.app.models import Classification
 from webapp.app.queries import GENERATE_REPORT
@@ -18,6 +20,71 @@ from webapp.app.queries import GENERATE_REPORT
 logger = logging.getLogger('dspreview_application')
 con = get_connection()
 ############################################################################
+
+
+class Manager(object):
+    def __enter__(self):
+        try:
+            config = ConfigHelper()
+            credentials = pika.PlainCredentials(config.get_config("MQ_USER"),
+                                                config.get_config("MQ_PASS"))
+            host = config.get_config("MQ_HOST")
+            port = config.get_config("MQ_PORT")
+            vhost = config.get_config("MQ_VHOST")
+            self.queue = config.get_config("MQ_QUEUE")
+            parameters = pika.ConnectionParameters(host=host, port=port,
+                                                   virtual_host=vhost,
+                                                   credentials=credentials)
+            self.connection = pika.BlockingConnection(parameters)
+            self.channel = self.connection.channel()
+            self.channel.queue_declare(queue=self.queue, durable=True)
+        except Exception as err:
+            logger.exception(err)
+            raise Exception("""It was not possible to connect to the MQ,
+                            please check the connection information""")
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.connection.close()
+
+    def schedule_task(self, task):
+        self.channel.basic_publish(exchange='',
+                                   routing_key=self.queue,
+                                   body=task,
+                                   properties=pika.BasicProperties(
+                                           delivery_mode=2,))
+
+    def check_schedule(self):
+        self.channel.queue_declare(queue=self.queue, durable=True)
+
+        def callback(ch, method, properties, body):
+            body = body.lower()
+            logger.info("Received %r" % body)
+            workers = []
+            if body == 'dcm':
+                logger.info("Triggering DCM worker")
+                workers.append(DcmWorker())
+            elif len(body.split(".")):
+                _, dsp = body.split(".")
+                logger.info("Triggering DSP worker [{}]".format(dsp))
+                workers.append(DspWorker(dsp))
+            else:
+                logger.info("Triggering DSP workers")
+                dsp_opts = BucketHelper.dsp_available()
+                logger.info("Found [{}]".format(", ".join(dsp_opts)))
+                for opt in dsp_opts:
+                    logger.info("Creating structure for [{}]".format(opt))
+                    workers.append(DspWorker(opt))
+            for w in workers:
+                w.extract().transform().load()
+            ch.basic_ack(delivery_tag=method.delivery_tag)
+
+        self.channel.basic_qos(prefetch_count=1)
+        self.channel.basic_consume(callback, queue=self.queue)
+        self.channel.start_consuming()
+
+    def route_task(self):
+        pass
 
 
 class Worker(object):
