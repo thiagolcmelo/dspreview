@@ -113,7 +113,7 @@ def manager(args):
         try:
             logger.info("Server requested")
             from webapp.run import app
-            app.run(port=args.port)
+            app.run(host='0.0.0.0', port=args.port)
         except (KeyboardInterrupt, SystemExit):
             logger.info("Server shutdown")
         except Exception as err:
