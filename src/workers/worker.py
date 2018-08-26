@@ -58,13 +58,13 @@ class Manager(object):
         self.channel.queue_declare(queue=self.queue, durable=True)
 
         def callback(ch, method, properties, body):
-            body = body.lower()
-            logger.info("Received %r" % body)
+            body = body.decode("utf-8").lower()
+            logger.info(">>> Received {}".format(body))
             workers = []
             if body == 'dcm':
                 logger.info("Triggering DCM worker")
                 workers.append(DcmWorker())
-            elif len(body.split(".")):
+            elif "." in body:
                 _, dsp = body.split(".")
                 logger.info("Triggering DSP worker [{}]".format(dsp))
                 workers.append(DspWorker(dsp))
@@ -78,6 +78,7 @@ class Manager(object):
             for w in workers:
                 w.extract().transform().load()
             ch.basic_ack(delivery_tag=method.delivery_tag)
+            logger.info("<<< Success :)")
 
         self.channel.basic_qos(prefetch_count=1)
         self.channel.basic_consume(callback, queue=self.queue)

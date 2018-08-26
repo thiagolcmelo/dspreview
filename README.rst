@@ -136,9 +136,9 @@ The default port is ``80``
 Finally, it is possible to put the worker to run in a loop, in this case, it
 will consume a queue in the RabbitMQ. The messages must be:
 
-- "dcm" for the DCM worker
-- "dsp" for running all DSP workers
-- "dsp.dbm" for running a specific DSP worker
+- ``dcm`` for the DCM worker
+- ``dsp`` for running all DSP workers
+- ``dsp.dbm`` for running a specific DSP worker (DBM in this case)
 
 The worker might be launched as:
 
@@ -156,7 +156,53 @@ It is possible to add itens to the queue through:
 Usage
 -----
 
+Besides the configuration described above, it is also important to understand the
+``classifications``. The classifications might be managed through the webserver
+in the underlying section.
 
+The idea is that each line in the DCM and DSP files might be classified according
+to a **brand**, a **sub brand**, and a **dsp**. You can create a regex that
+will be checked against a combination of fields.
+
+For instance, it is a line in the DBM file:
+
++------------+-------------+---------------------+-------------+--------+------------+ 
+| date       | campaign_id | campaign            | impressions | clicks | cost       | 
++============+=============+=====================+=============+========+============+ 
+| 2018-01-01 | 128115      | acme_asprin_youtube | 6011070     | 11889  | 40334.2797 | 
++------------+-------------+---------------------+-------------+--------+------------+ 
+
+You might choose to apply the regex ``.*acme.*`` for classifying the brand as **Acme**, and the only necessary field is ``campaign``.
+
+Chances are that you have another brand, say **Umbrella Corp**, and for some reason, you end up with a line like:
+
++------------+-------------+---------------------+-------------+--------+------------+ 
+| date       | campaign_id | campaign            | impressions | clicks | cost       | 
++============+=============+=====================+=============+========+============+ 
+| 2018-03-01 | 475987      | acme_solution       | 4867867     | 46454  | 87897.4558 | 
++------------+-------------+---------------------+-------------+--------+------------+ 
+
+Now, the regex above would classify both this lines as **Acme**. 
+
+A solution would be change the regex to ``^128115acme.*`` applied to the 
+concatenation of fields ``campaign_id`` and ``campaign``, in order to  identify 
+ads belonging to the brand **Acme**. 
+
+For identifying ads belonging to **Umbrella Corp** the regex could be ``^475987acme.*``
+applied to the concatenation of fields ``campaign_id`` and ``campaign``.
+
+The fields that can be used are:
+
+1. campaign_id
+2. campaign
+3. placement_id (form DCM files only)
+4. placement (form DCM files only)
+
+Fields will be concatenated in this order.
+
+The regex patterns will be applied in the order in which they are registered 
+in the database. The first matching a combination of fields will define the 
+classification, so it is necessary to avoid ubiquitous regex.
 
 Preparing for Development
 -------------------------

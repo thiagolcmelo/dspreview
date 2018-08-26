@@ -36,12 +36,6 @@ class ChangeWorker(argparse.Action):
         setattr(namespace, self.dest, values)
 
 
-class ChangeManager(argparse.Action):
-    def __call__(self, parser, namespace, values, option_string=None):
-        namespace.action = "manage"
-        setattr(namespace, self.dest, values)
-
-
 def create_parser():
     parser = argparse.ArgumentParser(description="""
     CLI to control workers execution. It is also useful for initializing
@@ -68,7 +62,7 @@ def create_parser():
                         help="Delay for restart in case of error",
                         default=20, required=False)
     parser.add_argument("--poke", "-k", type=str, help="Add msg to queue",
-                        required=False, action=ChangeManager)
+                        required=False)
     return parser
 
 
@@ -82,26 +76,28 @@ def manager(args):
         a list of arguments
 
     """
-    if args.action == "init":
+    action = args.action.lower()
+    if action == "init":
         logger.info("Initializing the environment")
         initialize_database()
 
-    elif args.action == "manage":
-        with Manager() as m:
-            m.schedule_task(args.poke)
-
-    elif args.action == "work":
+    elif action == "work":
         if args.generate_report:
             logger.info("Generating report")
             generate_report()
+        elif args.poke:
+            with Manager() as m:
+                m.schedule_task(args.poke)
         else:
+            worker = args.worker.lower()
             workers = []
-            if args.worker == 'dcm':
+            if worker == 'dcm':
                 logger.info("Triggering DCM worker")
                 workers.append(DcmWorker())
             elif args.dsp:
-                logger.info("Triggering DSP worker [{}]".format(args.dsp))
-                workers.append(DspWorker(args.dsp))
+                dsp = args.dsp.lower()
+                logger.info("Triggering DSP worker [{}]".format(dsp))
+                workers.append(DspWorker(dsp))
             else:
                 logger.info("Triggering DSP workers")
                 dsp_opts = BucketHelper.dsp_available()
@@ -112,7 +108,7 @@ def manager(args):
             for w in workers:
                 w.extract().transform().load()
 
-    elif args.action == "serve":
+    elif action == "serve":
         # keep these together for sanity reasons
         try:
             logger.info("Server requested")
@@ -123,7 +119,7 @@ def manager(args):
         except Exception as err:
             logger.exception(err)
 
-    elif args.action == "operate":
+    elif action == "operate":
         logger.info("Operation requested")
         delay = args.delay
         while True:
