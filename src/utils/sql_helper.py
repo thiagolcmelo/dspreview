@@ -7,7 +7,7 @@ import re
 import string
 import logging
 from collections import namedtuple
-from random import choices
+from random import choice
 
 # third-party imports
 from sqlalchemy import create_engine
@@ -27,7 +27,8 @@ def rand_word(N):
     lowers = string.ascii_lowercase
     uppers = string.ascii_uppercase
     digits = string.digits
-    return ''.join(choices(lowers + uppers + digits, k=N))
+    seq = list(lowers + uppers + digits)
+    return ''.join([choice(seq) for i in range(N)])
 
 
 def get_connection_info():
