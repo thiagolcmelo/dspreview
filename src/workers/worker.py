@@ -62,7 +62,7 @@ class Manager(object):
             logger.info(">>> Received {}".format(body))
 
             if body == "report":
-                generate_report
+                generate_report()
             else:
                 workers = []
                 if body == 'dcm':

@@ -74,6 +74,26 @@ def report_date():
         })
 
 
+@home.route('/last_update')
+@login_required
+def last_update():
+    """
+    Get last update date
+    """
+    try:
+        last = Report.query.order_by("updated_at desc").first().updated_at
+        return jsonify({
+            "status": "success",
+            "last_update": last
+        })
+    except Exception as err:
+        print(str(err))
+        return jsonify({
+            "status": "fail",
+            "data": []
+        })
+
+
 @home.route('/classifications', methods=['GET', 'POST'])
 @login_required
 def list_classifications():

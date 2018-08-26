@@ -28,6 +28,6 @@ setup(
         "Operating System :: OS Independent",
     ],
     url='https://github.com/thiagolcmelo/dspreview',
-    download_url='https://github.com/thiagolcmelo/dspreview/archive/v0.1.8.tar.gz',
-    version='0.1.8',
+    download_url='https://github.com/thiagolcmelo/dspreview/archive/v0.1.9.tar.gz',
+    version='0.1.9',
 )

@@ -5,7 +5,7 @@
     <div class="container-fluid">
         <div class="row">
             <div class="col-lg-12">
-                <h1>DSP Report</h1>
+                <h1>DSP Report <small>Last update: <span id="last_update">-/-</span></small></h1>
                 <form class="form-inline">
                     <div class="form-group">
                         <label for="start_date">Start Date</label>
@@ -15,7 +15,7 @@
                         <label for="end_date">End Date</label>
                         <input type="date" class="form-control" id="end_date">
                     </div>
-                    <button id="get_report" type="button" class="btn btn-default"><i class="fa fa-refresh"></i> Generate</button>
+                    <button id="get_report" type="button" class="btn btn-default"><i class="fa fa-filter"></i> Filter</button>
                 </form>
                 <hr>
                 <table id="report_table" class="display" style="width:100%">
@@ -68,6 +68,16 @@ $(function() {
     var refresh_table = function () {
         var start_date = $('#start_date').val();
         var end_date = $('#end_date').val();
+        
+        $.ajax({
+          url: '/last_update',
+          success: function (data) {
+              if (data.status == "success") {
+                  $('#last_update').text(data.last_update);
+              }
+          }
+        });
+        
         $("#report_table").show();
 
         table.destroy();
