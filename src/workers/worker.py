@@ -60,23 +60,27 @@ class Manager(object):
         def callback(ch, method, properties, body):
             body = body.decode("utf-8").lower()
             logger.info(">>> Received {}".format(body))
-            workers = []
-            if body == 'dcm':
-                logger.info("Triggering DCM worker")
-                workers.append(DcmWorker())
-            elif "." in body:
-                _, dsp = body.split(".")
-                logger.info("Triggering DSP worker [{}]".format(dsp))
-                workers.append(DspWorker(dsp))
+
+            if body == "report":
+                generate_report
             else:
-                logger.info("Triggering DSP workers")
-                dsp_opts = BucketHelper.dsp_available()
-                logger.info("Found [{}]".format(", ".join(dsp_opts)))
-                for opt in dsp_opts:
-                    logger.info("Creating structure for [{}]".format(opt))
-                    workers.append(DspWorker(opt))
-            for w in workers:
-                w.extract().transform().load()
+                workers = []
+                if body == 'dcm':
+                    logger.info("Triggering DCM worker")
+                    workers.append(DcmWorker())
+                elif "." in body:
+                    _, dsp = body.split(".")
+                    logger.info("Triggering DSP worker [{}]".format(dsp))
+                    workers.append(DspWorker(dsp))
+                else:
+                    logger.info("Triggering DSP workers")
+                    dsp_opts = BucketHelper.dsp_available()
+                    logger.info("Found [{}]".format(", ".join(dsp_opts)))
+                    for opt in dsp_opts:
+                        logger.info("Creating structure for [{}]".format(opt))
+                        workers.append(DspWorker(opt))
+                for w in workers:
+                    w.extract().transform().load()
             ch.basic_ack(delivery_tag=method.delivery_tag)
             logger.info("<<< Success :)")
 

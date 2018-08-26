@@ -139,6 +139,7 @@ will consume a queue in the RabbitMQ. The messages must be:
 - ``dcm`` for the DCM worker
 - ``dsp`` for running all DSP workers
 - ``dsp.dbm`` for running a specific DSP worker (DBM in this case)
+- ``report`` for generating full report
 
 The worker might be launched as:
 
@@ -153,8 +154,8 @@ It is possible to add itens to the queue through:
     $ dspreview --poke "dsp.dbm"
 
 
-Usage
------
+Classifications
+---------------
 
 Besides the configuration described above, it is also important to understand the
 ``classifications``. The classifications might be managed through the webserver
